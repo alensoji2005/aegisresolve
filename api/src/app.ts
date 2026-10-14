@@ -8,6 +8,7 @@ import type pg from 'pg';
 import { authenticate, userOf } from './auth/plugin.js';
 import { authRoutes } from './auth/routes.js';
 import type { BlobStore } from './blob.js';
+import { caseRoutes } from './cases/routes.js';
 import type { Config } from './config.js';
 import { ApiError } from './errors.js';
 import { httpStatusFor, type Ledger, LedgerError } from './ledger/ledger.js';
@@ -28,7 +29,7 @@ export interface AppDeps {
 }
 
 /** Feature route modules register here; each gets the shared deps and runs behind authentication. */
-export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes];
+export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes];
 
 export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' && !process.env.VITEST, bodyLimit: 1024 * 1024 });
