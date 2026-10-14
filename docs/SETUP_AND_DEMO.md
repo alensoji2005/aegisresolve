@@ -179,7 +179,7 @@ Show the architecture: React UI → Fastify API → Hyperledger Fabric (2 orgs) 
    "A conventional database can't tell you this happened. Here the blockchain is the reference copy, so any edit is caught."
 4. Undo the status edit (or do a clean reset afterwards):
    ```bash
-   docker compose exec -T postgres psql -U aegis -c "update cases c set status = ledger_json->>'status' from cases x where c.case_id = x.case_id;"
+   docker compose exec -T postgres psql -U aegis -c "update cases set status = ledger_json->>'status';"
    ```
 
 ### Closing (1 min)
