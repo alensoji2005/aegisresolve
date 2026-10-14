@@ -77,7 +77,8 @@ console.log('3. inv3 blocked by COI R4; inv1 assigned');
 
 step = 4;
 const inv = await as('inv1');
-check((await call(inv, 'POST', `/cases/${id}/accept`)).status === 200, 'accept');
+const acc = await call(inv, 'POST', `/cases/${id}/accept`);
+check(acc.status === 200, `accept: ${acc.status} ${JSON.stringify(acc.json)}`);
 const lc = (await call(inv, 'GET', `/cases/${id}/lifecycle`)).json;
 check(lc.suggested.length > 0, 'no lifecycle suggestions');
 check((await call(inv, 'POST', `/cases/${id}/lifecycle-links`, { eventIds: [lc.suggested[0].id] })).status === 200, 'link event');

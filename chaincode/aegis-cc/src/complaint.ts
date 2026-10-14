@@ -69,6 +69,12 @@ export class ComplaintContract extends Contract {
     return 'pong';
   }
 
+  /** The caller's identity exactly as chaincode sees it; the API stores this id to map ledger signers to users. */
+  @Transaction(false)
+  async whoami(ctx: Context): Promise<string> {
+    return JSON.stringify(actorOf(ctx));
+  }
+
   @Transaction()
   async registerCase(ctx: Context, caseId: string, pseudonym: string, contentHash: string, assetRefsJson: string, locationRef: string): Promise<string> {
     const actor = requireRole(ctx, 'COMPLAINANT', 'STORE_OFFICER');

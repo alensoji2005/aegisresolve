@@ -14,6 +14,10 @@ describe('registration, evidence, triage, links, queries', () => {
     expect(c.complainantCertHash).toBe(certHash(people.comp.id, c.caseSalt));
   });
 
+  it('whoami returns the caller identity and attributes', async () => {
+    expect(JSON.parse(await x.cc.whoami(x.ctx(people.inv)))).toEqual(people.inv);
+  });
+
   it('register twice -> ALREADY_EXISTS', async () => {
     await x.register();
     await expect(x.register()).rejects.toThrow(/^ALREADY_EXISTS/);

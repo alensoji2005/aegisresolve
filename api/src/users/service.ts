@@ -29,7 +29,10 @@ export async function createUser(deps: AppDeps, input: NewUser): Promise<{ id: s
   if (deps.cfg.LEDGER_MODE === 'fabric') {
     const { enrollUser } = await import('../ledger/identity.js');
     const e = await enrollUser(deps.cfg, { username: u.username, role: u.role, unit: u.unit, depot: u.depot, pseudo });
-    fabricId = e.fabricId;
+    // Ask the chaincode for the id it will see for this certificate, rather than re-deriving Fabric's DN formatting.
+    const who = await deps.ledger.evaluate<{ id: string }>(
+      { userId: id, role: u.role, unit: u.unit, depot: u.depot, pseudo, certPem: e.certPem, keyPem: e.keyPem }, 'complaint:whoami', []);
+    fabricId = who.id;
     cert = e.certPem;
     keyEnc = sealString(e.keyPem, deps.cfg.WALLET_KEK);
   }
