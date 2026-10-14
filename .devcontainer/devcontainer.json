@@ -7,7 +7,7 @@
     "ghcr.io/devcontainers/features/node:1": { "version": "20" },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
   },
-  "containerEnv": { "AEGIS_ROOT": "${containerWorkspaceFolder}", "FABRIC_SAMPLES": "/home/vscode/fabric-samples" },
+  "containerEnv": { "AEGIS_ROOT": "${containerWorkspaceFolder}" },
   "postCreateCommand": "bash scripts/setup-codespace.sh",
   "forwardPorts": [5173, 3000, 9001],
   "portsAttributes": {

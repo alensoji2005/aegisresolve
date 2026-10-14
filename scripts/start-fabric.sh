@@ -2,7 +2,7 @@
 # Start Fabric (2 orgs + CAs), deploy chaincode, start Postgres + MinIO, seed. Safe to re-run after `network/down.sh`.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-export PATH="$HOME/fabric-samples/bin:$PATH" AEGIS_ROOT="$ROOT"
+export FABRIC_SAMPLES="$HOME/fabric-samples" PATH="$HOME/fabric-samples/bin:$PATH" AEGIS_ROOT="$ROOT"
 cd "$ROOT"
 bash network/up.sh
 bash network/deploy.sh "${1:-1}"
