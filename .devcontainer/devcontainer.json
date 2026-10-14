@@ -1,0 +1,18 @@
+{
+  "name": "AegisResolve",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "hostRequirements": { "cpus": 4, "memory": "16gb" },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
+  },
+  "containerEnv": { "AEGIS_ROOT": "${containerWorkspaceFolder}", "FABRIC_SAMPLES": "/home/vscode/fabric-samples" },
+  "postCreateCommand": "bash scripts/setup-codespace.sh",
+  "forwardPorts": [5173, 3000, 9001],
+  "portsAttributes": {
+    "5173": { "label": "Web UI", "onAutoForward": "openBrowser" },
+    "3000": { "label": "API" },
+    "9001": { "label": "MinIO console" }
+  }
+}
