@@ -14,7 +14,9 @@ export function authRoutes(deps: AppDeps): FastifyPluginAsync {
   const invalid = () => new ApiError(401, 'INVALID_CREDENTIALS', 'invalid username or password');
 
   return async (app) => {
-    app.post('/login', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req) => {
+    // Per account and source address, so one locked-out account does not block colleagues behind the same NAT.
+    const loginLimit = { max: 5, timeWindow: '1 minute', keyGenerator: (req: any) => `${req.ip}:${String(req.body?.username ?? '').toLowerCase()}` };
+    app.post('/login', { config: { rateLimit: loginLimit } }, async (req) => {
       const body = parse(z.object({ username: z.string().max(80), password: z.string().max(200) }), req.body);
       const { rows } = await deps.pool.query('select id, username, password_hash, totp_secret_enc, totp_confirmed from users where username = $1 and active', [body.username]);
       const u = rows[0];

@@ -22,7 +22,7 @@ export function RiskBars({ factors }: { factors: Factor[] }) {
           <span className="h-2 rounded bg-paper" aria-hidden>
             <span className="block h-2 rounded bg-accent" style={{ width: `${Math.round((f.contribution / 0.3) * 100)}%` }} />
           </span>
-          <span className="text-right font-mono text-xs">{f.name} — {f.contribution.toFixed(2)}</span>
+          <span className="text-right font-mono text-xs">{f.contribution.toFixed(2)}</span>
         </li>
       ))}
     </ul>

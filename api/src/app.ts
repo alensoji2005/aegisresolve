@@ -40,7 +40,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.register(helmet);
   app.register(cors, { origin: deps.cfg.WEB_ORIGIN, credentials: true });
   app.register(cookie);
-  app.register(rateLimit, { global: false });
+  app.register(rateLimit, { global: false, hook: 'preHandler' });
   app.register(multipart, { limits: { fileSize: MAX_EVIDENCE_BYTES, files: 1 } });
 
   app.setErrorHandler((err: any, req, reply) => {

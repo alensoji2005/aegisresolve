@@ -1,5 +1,5 @@
-import { ComplaintContract } from '../../../chaincode/aegis-cc/src/complaint.js';
-import { LifecycleContract } from '../../../chaincode/aegis-cc/src/lifecycle.js';
+// Compiled chaincode (tsc: legacy decorators + metadata, as on a real peer). esbuild-based runners cannot compile it from src.
+import { ComplaintContract, LifecycleContract } from '../../../chaincode/aegis-cc/dist/index.js';
 import { ctxFor, newWorld } from '../../../chaincode/aegis-cc/test/fakeContext.js';
 import { fakeIdentityOf, type Ledger, LedgerError, type LedgerUser } from './ledger.js';
 
