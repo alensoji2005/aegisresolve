@@ -82,3 +82,24 @@ export async function makeTestApp(over: Partial<AppDeps> = {}): Promise<TestApp>
 
 export const auth = (token: string) => ({ authorization: `Bearer ${token}` });
 export { totpCode };
+
+export function multipart(filename: string, data: Buffer, type = 'application/octet-stream') {
+  const b = '----aegis' + randomBytes(8).toString('hex');
+  const payload = Buffer.concat([
+    Buffer.from(`--${b}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${type}\r\n\r\n`),
+    data,
+    Buffer.from(`\r\n--${b}--\r\n`),
+  ]);
+  return { payload, headers: { 'content-type': `multipart/form-data; boundary=${b}` } };
+}
+
+export const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+export const PDF = Buffer.from('%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n');
+
+export const complaint = {
+  title: 'Damp packaging in bay 4',
+  description: 'Humidity indicator showed 85% for two days; packaging on the lot looks damp.',
+  assetRefs: ['LOT-B03-2025-0117'],
+  locationRef: 'DEP-02/MAG-01/BAY-04',
+  occurredAt: '2026-10-13T08:00:00.000Z',
+};

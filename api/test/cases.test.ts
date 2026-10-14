@@ -1,18 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LedgerError } from '../src/ledger/ledger.js';
-import { auth, makeTestApp, type TestApp } from './helpers.js';
+import { auth, complaint, makeTestApp, type TestApp } from './helpers.js';
 
 let t: TestApp;
 type U = Awaited<ReturnType<TestApp['user']>>;
 let compA: U, compB: U, store1: U, store2: U, inv: U, so: U;
 
-export const complaint = {
-  title: 'Damp packaging in bay 4',
-  description: 'Humidity indicator showed 85% for two days; packaging on the lot looks damp.',
-  assetRefs: ['LOT-B03-2025-0117'],
-  locationRef: 'DEP-02/MAG-01/BAY-04',
-  occurredAt: '2026-10-13T08:00:00.000Z',
-};
 
 beforeAll(async () => {
   t = await makeTestApp();
