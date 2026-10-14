@@ -5,7 +5,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 echo "== Node dependencies"
-sudo corepack enable && corepack prepare pnpm@9.15.9 --activate
+command -v pnpm >/dev/null || npm install -g pnpm@9.15.9
+# argon2 compiles natively when no prebuilt binary matches; it needs node-gyp + a C++ toolchain.
+command -v node-gyp >/dev/null || npm install -g node-gyp
+command -v g++ >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq build-essential python3)
 pnpm install
 npm install --prefix chaincode/aegis-cc
 
