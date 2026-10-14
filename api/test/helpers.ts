@@ -54,6 +54,8 @@ export interface TestApp {
   blobs: MemoryBlobStore;
   clock: { set(d: Date): void; advanceHours(h: number): void };
   user(u: NewUser): Promise<{ id: string; token: string; password: string; totpSecret: string }>;
+  /** Fresh access token signed at the current test clock. */
+  token(userId: string): Promise<string>;
   stop(): Promise<void>;
 }
 
@@ -76,6 +78,7 @@ export async function makeTestApp(over: Partial<AppDeps> = {}): Promise<TestApp>
       const created = await createUser(deps, { totpConfirmed: true, ...u });
       return { ...created, token: await signToken(cfg, created.id, 'access', now) };
     },
+    token: (userId) => signToken(cfg, userId, 'access', now),
     async stop() { await app.close(); await stop(); },
   };
 }
