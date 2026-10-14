@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type Action, authorize, type AuthUser, type CaseFacts } from '../src/auth/authorize.js';
 
-const u = (role: AuthUser['role'], depot = 'NONE', id = role): AuthUser => ({ id, username: id, role, unit: 'U1', depot, pseudo: '' });
+const u = (role: AuthUser['role'], depot = 'NONE', id: string = role): AuthUser => ({ id, username: id, role, unit: 'U1', depot, pseudo: '' });
 const c = (over: Partial<CaseFacts> = {}): CaseFacts => ({ depot: 'DEP-02', investigatorUserId: 'inv-a', ownedByUser: false, ...over });
 
 const cases: [string, AuthUser, Action, CaseFacts | undefined, boolean][] = [

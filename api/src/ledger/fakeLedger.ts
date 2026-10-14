@@ -1,7 +1,7 @@
 import { ComplaintContract } from '../../../chaincode/aegis-cc/src/complaint.js';
 import { LifecycleContract } from '../../../chaincode/aegis-cc/src/lifecycle.js';
 import { ctxFor, newWorld } from '../../../chaincode/aegis-cc/test/fakeContext.js';
-import { Ledger, LedgerError, LedgerUser } from './ledger.js';
+import { fakeIdentityOf, type Ledger, LedgerError, type LedgerUser } from './ledger.js';
 
 const parse = (s: unknown) => {
   if (typeof s !== 'string') return s;
@@ -16,16 +16,12 @@ export class FakeLedger implements Ledger {
 
   constructor(private clock: () => Date) {}
 
-  static identityOf(userId: string): string {
-    return 'x509::' + userId;
-  }
-
   private async call(user: LedgerUser, fn: string, args: string[], write: boolean) {
     const [cn, fname] = fn.split(':');
     const contract = this.contracts[cn];
     if (!contract || typeof contract[fname] !== 'function') throw new LedgerError('LEDGER_ERROR', `unknown function ${fn}`);
     const txId = `tx-${String(++this.seq).padStart(6, '0')}`;
-    const ctx = ctxFor(this.world, { id: FakeLedger.identityOf(user.userId), role: user.role, unit: user.unit, depot: user.depot, pseudo: user.pseudo },
+    const ctx = ctxFor(this.world, { id: fakeIdentityOf(user.userId), role: user.role, unit: user.unit, depot: user.depot, pseudo: user.pseudo },
       { txId, time: this.clock() });
     // Fabric transactions are atomic and evaluations never write: snapshot and restore on failure / evaluate.
     const snapshot = { state: new Map(this.world.state), history: new Map([...this.world.history].map(([k, v]) => [k, [...v]])), events: this.world.events.length };

@@ -50,6 +50,9 @@ export function httpStatusFor(code: LedgerCode): number {
   }
 }
 
+/** Certificate id the FakeLedger assigns to a user (real Fabric ids come from the enrolled certificate). */
+export const fakeIdentityOf = (userId: string) => 'x509::' + userId;
+
 export async function withMvccRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();

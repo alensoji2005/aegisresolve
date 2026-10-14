@@ -5,7 +5,7 @@ import type { AppDeps } from '../app.js';
 import { hashPassword, newTotpSecret } from '../auth/credentials.js';
 import { openString, sealString } from '../crypto.js';
 import { notFound } from '../errors.js';
-import { FakeLedger } from '../ledger/fakeLedger.js';
+import { fakeIdentityOf } from '../ledger/ledger.js';
 import type { LedgerUser } from '../ledger/ledger.js';
 
 export const newUserSchema = z.object({
@@ -23,7 +23,7 @@ export async function createUser(deps: AppDeps, input: NewUser): Promise<{ id: s
   const password = input.password ?? randomBytes(12).toString('base64url');
   const totpSecret = input.totpSecret ?? newTotpSecret();
   const pseudo = u.pseudo ?? `PER-${randomBytes(3).toString('hex')}`;
-  let fabricId = FakeLedger.identityOf(id);
+  let fabricId = fakeIdentityOf(id);
   let cert: string | null = null;
   let keyEnc: Buffer | null = null;
   if (deps.cfg.LEDGER_MODE === 'fabric') {
