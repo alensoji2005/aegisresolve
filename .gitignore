@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+*.local.json
+ai/models
+ai/data
+.venv
+__pycache__
+minio-data
+pg-data
