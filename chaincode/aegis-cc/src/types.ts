@@ -72,6 +72,8 @@ export interface CaseRecord {
   slaDueAt: string;
   escalationLevel: 0 | 1 | 2 | 3;
   closedAt: string | null;
+  appealReasonHash: string | null;
+  appealDecisionHash: string | null;
   createdAt: string;
   updatedAt: string;
   updatedBy: string;
