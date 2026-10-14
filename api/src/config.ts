@@ -12,6 +12,8 @@ const b64 = (name: string, bytes: number) =>
 
 const schema = z.object({
   DATABASE_URL: z.string().url(),
+  /** When set, evidence ciphertext is stored on disk here instead of S3/MinIO. */
+  BLOB_DIR: z.string().optional(),
   S3_ENDPOINT: z.string().url().default('http://localhost:9000'),
   S3_BUCKET: z.string().default('aegis-evidence'),
   S3_ACCESS_KEY: z.string().default('aegis'),

@@ -1,4 +1,6 @@
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { Config } from './config.js';
 
 export interface BlobStore {
@@ -16,6 +18,34 @@ export class MemoryBlobStore implements BlobStore {
     return Buffer.from(v);
   }
   async delete(key: string) { this.items.delete(key); }
+}
+
+/** Stores ciphertext as files under a directory. Keys are generated internally (evidence/<caseId>/<uuid>). */
+export class FsBlobStore implements BlobStore {
+  constructor(private dir: string) {}
+
+  private file(key: string) {
+    if (!/^[\w/-]+$/.test(key) || key.includes('..')) throw new Error('INVALID_ARG: blob key');
+    return path.join(this.dir, key);
+  }
+
+  async put(key: string, data: Buffer) {
+    const f = this.file(key);
+    await mkdir(path.dirname(f), { recursive: true });
+    await writeFile(f, data);
+  }
+
+  async get(key: string) {
+    try {
+      return await readFile(this.file(key));
+    } catch {
+      throw new Error('NOT_FOUND: blob ' + key);
+    }
+  }
+
+  async delete(key: string) {
+    await rm(this.file(key), { force: true });
+  }
 }
 
 export class S3BlobStore implements BlobStore {

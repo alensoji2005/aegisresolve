@@ -1,5 +1,5 @@
 import { buildApp, type AppDeps } from './app.js';
-import { type BlobStore, MemoryBlobStore, S3BlobStore } from './blob.js';
+import { type BlobStore, FsBlobStore, MemoryBlobStore, S3BlobStore } from './blob.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db.js';
 import { makeLedger } from './ledger/index.js';
@@ -27,7 +27,7 @@ async function main() {
   const pool = createPool(cfg.DATABASE_URL);
   if (offline) pool.options.max = 1;
   await migrate(pool);
-  const blobs: BlobStore = offline ? new MemoryBlobStore() : new S3BlobStore(cfg);
+  const blobs: BlobStore = offline ? new MemoryBlobStore() : cfg.BLOB_DIR ? new FsBlobStore(cfg.BLOB_DIR) : new S3BlobStore(cfg);
   const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg), blobs, ai: new HttpAiClient(cfg), now: () => new Date() };
   if (offline) {
     const r = await seed(deps);

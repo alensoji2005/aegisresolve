@@ -9,10 +9,9 @@
   },
   "containerEnv": { "AEGIS_ROOT": "${containerWorkspaceFolder}" },
   "postCreateCommand": "bash scripts/setup-codespace.sh",
-  "forwardPorts": [5173, 3000, 9001],
+  "forwardPorts": [5173, 3000],
   "portsAttributes": {
     "5173": { "label": "Web UI", "onAutoForward": "openBrowser" },
-    "3000": { "label": "API" },
-    "9001": { "label": "MinIO console" }
+    "3000": { "label": "API" }
   }
 }

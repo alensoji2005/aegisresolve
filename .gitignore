@@ -8,3 +8,4 @@ ai/data
 __pycache__
 minio-data
 pg-data
+data/blobs
