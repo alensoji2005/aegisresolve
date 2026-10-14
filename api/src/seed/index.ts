@@ -19,9 +19,10 @@ export async function seed(deps: AppDeps, credentialsPath = CREDENTIALS_PATH): P
   const { rows } = await deps.pool.query(`select 1 from users where username = 'system'`);
   if (rows.length) return { status: 'already seeded', users: 0, events: 0 };
   const creds = await seedUsers(deps);
-  const { events } = await seedDomain(deps, mulberry32(42));
+  // Written before the slow ledger replay so a later failure does not lose the only copy of the passwords.
   await mkdir(path.dirname(credentialsPath), { recursive: true });
   await writeFile(credentialsPath, JSON.stringify(creds, null, 2), { mode: 0o600 });
+  const { events } = await seedDomain(deps, mulberry32(42));
   return { status: 'seeded', users: creds.length, events };
 }
 
