@@ -30,8 +30,9 @@ export async function createCase(deps: AppDeps, user: AuthUser, input: CreateCas
     await client.query('begin');
     await client.query('insert into pseudonyms(pseudonym, user_id, case_id) values ($1,$2,$3)', [pseudonym, user.id, caseId]);
     await client.query(
-      `insert into cases(case_id, pseudonym, status, depot_id, location_ref, occurred_at, ledger_json) values ($1,$2,'PENDING_LEDGER',$3,$4,$5,'{}')`,
-      [caseId, pseudonym, input.locationRef.slice(0, 6), input.locationRef, input.occurredAt]);
+      `insert into cases(case_id, pseudonym, status, depot_id, location_ref, occurred_at, ledger_json, created_at, updated_at)
+       values ($1,$2,'PENDING_LEDGER',$3,$4,$5,'{}',$6,$6)`,
+      [caseId, pseudonym, input.locationRef.slice(0, 6), input.locationRef, input.occurredAt, deps.now()]);
     await client.query('insert into case_content(case_id, title_enc, description_enc, content_sha256) values ($1,$2,$3,$4)',
       [caseId, sealString(input.title, kek), sealString(input.description, kek), contentHashOf(input.title, input.description)]);
     await client.query('commit');

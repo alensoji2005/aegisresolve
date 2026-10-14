@@ -1,5 +1,5 @@
 import type { FastifyRequest } from 'fastify';
-import type { ZodType } from 'zod';
+import type { z, ZodTypeAny } from 'zod';
 import type { Role } from '../../../chaincode/aegis-cc/src/types.js';
 import type { AppDeps } from '../app.js';
 import { ApiError, forbidden } from '../errors.js';
@@ -33,7 +33,7 @@ export function requireRoles(req: FastifyRequest, ...roles: Role[]): AuthUser {
   return u;
 }
 
-export function parse<T>(schema: ZodType<T>, data: unknown): T {
+export function parse<S extends ZodTypeAny>(schema: S, data: unknown): z.output<S> {
   const r = schema.safeParse(data);
   if (!r.success) throw new ApiError(400, 'INVALID_ARG', 'invalid request', r.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })));
   return r.data;

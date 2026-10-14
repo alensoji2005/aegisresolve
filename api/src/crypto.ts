@@ -46,6 +46,16 @@ export function openString(b: Buffer, kek: Buffer): string {
   return open({ iv: b.subarray(0, 12), authTag: b.subarray(12, 28), dekWrapped: b.subarray(28, 88), ciphertext: b.subarray(88) }, kek).toString('utf8');
 }
 
+/** JSON with recursively sorted object keys, so hashes of the same data are stable. */
+export function canonicalJson(v: unknown): string {
+  if (Array.isArray(v)) return '[' + v.map(canonicalJson).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).sort().filter((k) => (v as any)[k] !== undefined)
+      .map((k) => JSON.stringify(k) + ':' + canonicalJson((v as any)[k])).join(',') + '}';
+  }
+  return JSON.stringify(v);
+}
+
 export function pseudonymFor(secret: Buffer, userId: string, caseId: string): string {
   return 'PSN-' + createHmac('sha256', secret).update(userId + '|' + caseId).digest('hex').slice(0, 12);
 }
