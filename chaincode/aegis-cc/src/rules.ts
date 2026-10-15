@@ -12,6 +12,7 @@ export const POLICY = {
   } as Record<RiskLevel, Role[]>,
   appealWindowDays: 14,
   custodyLookbackDays: 90,
+  maxDisclosureDays: 7,
 };
 
 export const TERMINAL: CaseStatus[] = ['CLOSED_FINAL', 'MERGED_DUPLICATE'];

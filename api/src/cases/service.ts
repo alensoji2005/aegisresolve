@@ -4,6 +4,7 @@ import type { AppDeps } from '../app.js';
 import { authorize, type AuthUser, type CaseFacts } from '../auth/authorize.js';
 import { openString, pseudonymFor, sealString, sha256Hex } from '../crypto.js';
 import { ApiError, notFound } from '../errors.js';
+import { activeGrants } from '../disclosure/service.js';
 import { loadLedgerUser } from '../users/service.js';
 import { projectCase } from './projection.js';
 
@@ -70,6 +71,7 @@ export async function loadCaseFor(deps: AppDeps, user: AuthUser, caseId: string)
   if (!row) throw notFound('case');
   const facts: CaseFacts = { depot: row.depot_id, investigatorUserId: row.investigator_user_id, ownedByUser: row.owner_id === user.id };
   if (!authorize(user, 'case:read:summary', facts)) throw notFound('case');
+  if (user.role === 'INVESTIGATOR' && row.investigator_user_id !== user.id) facts.fullGrant = (await activeGrants(deps, user, caseId)).full;
   return { row, facts };
 }
 
@@ -103,6 +105,7 @@ export async function getCaseView(deps: AppDeps, user: AuthUser, caseId: string)
     caseId, status: c.status, category: c.category, riskLevel: c.riskLevel, slaDueAt: c.slaDueAt, escalationLevel: c.escalationLevel,
     outcome: row.outcome, closedAt: c.closedAt, createdAt: c.createdAt, triageStatus: row.triage_status, isOwner: facts.ownedByUser, timeline,
     view: 'SUMMARY' as 'SUMMARY' | 'FULL',
+    grants: ['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR'].includes(user.role) ? await activeGrants(deps, user, caseId) : null,
   };
   if (!authorize(user, 'case:read:full', facts)) return summary;
 

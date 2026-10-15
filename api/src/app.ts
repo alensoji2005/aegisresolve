@@ -13,6 +13,7 @@ import type { BlobStore } from './blob.js';
 import { caseRoutes } from './cases/routes.js';
 import type { Config } from './config.js';
 import { ApiError } from './errors.js';
+import { disclosureRoutes } from './disclosure/routes.js';
 import { evidenceRoutes } from './evidence/routes.js';
 import { httpStatusFor, type Ledger, LedgerError } from './ledger/ledger.js';
 import type { AiClient } from './triage/aiClient.js';
@@ -35,7 +36,7 @@ export interface AppDeps {
 }
 
 /** Feature route modules register here; each gets the shared deps and runs behind authentication. */
-export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes, graphRoutes, anomalyRoutes];
+export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes, graphRoutes, anomalyRoutes, disclosureRoutes];
 
 export function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? (process.env.NODE_ENV !== 'test' && !process.env.VITEST), bodyLimit: 1024 * 1024 });

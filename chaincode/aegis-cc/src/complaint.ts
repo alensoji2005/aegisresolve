@@ -4,7 +4,7 @@ import {
 } from './ctxutil';
 import { addHours, assertTransition, checkCoi, escalationLevel, POLICY, quorumMet, riskLevelFromScore, TERMINAL } from './rules';
 import {
-  AccessEntry, Actor, CaseRecord, CaseStatus, CATEGORIES, Category, CoiResult, EvidenceAnchor, LifecycleEvent, Outcome, OUTCOMES,
+  AccessEntry, Actor, CaseRecord, CaseStatus, CATEGORIES, Category, CoiResult, Disclosure, EvidenceAnchor, LifecycleEvent, Outcome, OUTCOMES,
 } from './types';
 
 const DAY = 24 * 3600e3;
@@ -296,10 +296,62 @@ export class ComplaintContract extends Contract {
     return saveCase(ctx, c, actor, 'CaseEscalated');
   }
 
+  /**
+   * Controlled disclosure: a review-board member grants one person time-limited extra access to a case.
+   * FULL (full case view) is active at once; IDENTITY (who the complainant is) needs a second, different board member.
+   */
+  @Transaction()
+  async grantDisclosure(ctx: Context, caseId: string, grantId: string, granteeId: string, scope: string, reasonHash: string, expiresAt: string): Promise<string> {
+    const actor = requireRole(ctx, 'REVIEW_BOARD');
+    check(RE.uuid.test(grantId), 'grantId');
+    check(granteeId.length > 0 && granteeId !== actor.id, 'granteeId');
+    check(scope === 'FULL' || scope === 'IDENTITY', 'scope');
+    check(RE.hash.test(reasonHash), 'reasonHash');
+    const now = txTime(ctx).getTime();
+    const exp = Date.parse(expiresAt);
+    check(Number.isFinite(exp) && exp > now && exp <= now + POLICY.maxDisclosureDays * DAY, 'expiresAt');
+    await loadCase(ctx, caseId);
+    if (await getJson(ctx, 'DISC', [caseId, grantId])) fail('ALREADY_EXISTS', grantId);
+    const d: Disclosure = {
+      docType: 'disclosure', caseId, grantId, grantee: granteeId, scope: scope as Disclosure['scope'], reasonHash, grantedBy: actor.id,
+      approvedBy: scope === 'FULL' ? actor.id : null, expiresAt: new Date(exp).toISOString(), revoked: false, createdAt: new Date(now).toISOString(),
+    };
+    await putJson(ctx, 'DISC', [caseId, grantId], d);
+    return JSON.stringify(d);
+  }
+
+  @Transaction()
+  async approveDisclosure(ctx: Context, caseId: string, grantId: string): Promise<string> {
+    const actor = requireRole(ctx, 'REVIEW_BOARD');
+    const d = await getJson<Disclosure>(ctx, 'DISC', [caseId, grantId]);
+    if (!d) fail('NOT_FOUND', grantId);
+    if (d.grantedBy === actor.id || d.grantee === actor.id) fail('INELIGIBLE_APPROVER', 'a different board member must approve');
+    if (d.revoked || d.approvedBy || Date.parse(d.expiresAt) <= txTime(ctx).getTime()) fail('INVALID_TRANSITION', 'grant is not awaiting approval');
+    d.approvedBy = actor.id;
+    await putJson(ctx, 'DISC', [caseId, grantId], d);
+    return JSON.stringify(d);
+  }
+
+  @Transaction()
+  async revokeDisclosure(ctx: Context, caseId: string, grantId: string): Promise<string> {
+    requireRole(ctx, 'REVIEW_BOARD');
+    const d = await getJson<Disclosure>(ctx, 'DISC', [caseId, grantId]);
+    if (!d) fail('NOT_FOUND', grantId);
+    d.revoked = true;
+    await putJson(ctx, 'DISC', [caseId, grantId], d);
+    return JSON.stringify(d);
+  }
+
+  @Transaction(false)
+  async getDisclosures(ctx: Context, caseId: string): Promise<string> {
+    actorOf(ctx);
+    return JSON.stringify(await listByPrefix<Disclosure>(ctx, 'DISC', [caseId]));
+  }
+
   @Transaction()
   async logAccess(ctx: Context, caseId: string, scope: string): Promise<string> {
     const actor = actorOf(ctx);
-    check(scope === 'FULL' || (scope.startsWith('EVIDENCE:') && RE.uuid.test(scope.slice(9))), 'scope');
+    check(scope === 'FULL' || scope === 'IDENTITY' || (scope.startsWith('EVIDENCE:') && RE.uuid.test(scope.slice(9))), 'scope');
     await loadCase(ctx, caseId);
     const txId = ctx.stub.getTxID();
     const entry: AccessEntry = { docType: 'access', caseId, viewer: actor.id, role: actor.role, scope, at: txTime(ctx).toISOString(), txId };

@@ -109,3 +109,21 @@ export interface LifecycleEvent {
 }
 
 export interface AccessEntry { docType: 'access'; caseId: string; viewer: string; role: Role; scope: string; at: string; txId: string }
+
+export interface Disclosure {
+  docType: 'disclosure';
+  caseId: string;
+  grantId: string;
+  grantee: string;            // certificate id of the person given access
+  scope: 'FULL' | 'IDENTITY';
+  reasonHash: string;
+  grantedBy: string;
+  approvedBy: string | null;  // FULL: the granter; IDENTITY: a second, different board member
+  expiresAt: string;
+  revoked: boolean;
+  createdAt: string;
+}
+
+export function disclosureActive(d: Disclosure, now: Date): boolean {
+  return !d.revoked && d.approvedBy !== null && now.getTime() < Date.parse(d.expiresAt);
+}

@@ -15,11 +15,13 @@ interface CaseView {
   investigator?: { id: string | null; username: string } | null; coi?: { passed: boolean; rulesEvaluated: string[] } | null;
   approvals?: ApprovalView[]; relatedCaseIds?: string[]; linkedEventIds?: string[]; findingsOutcome?: string | null;
   findings?: { body: { body: string; outcome: string; correctiveAction: string | null }; createdAt: string } | null;
+  grants?: { full: boolean; identity: boolean } | null;
   ai?: { categoryProbs: Record<string, number>; entities: { type: string; value: string }[];
     explanation: { factors: Factor[]; topKeywords: string[]; needsHumanTriage: boolean; recurring: boolean } | null } | null;
 }
 
-const TABS = ['Overview', 'Evidence', 'Lifecycle', 'Related', 'Findings & review', 'Ledger'] as const;
+const TABS = ['Overview', 'Evidence', 'Lifecycle', 'Related', 'Findings & review', 'Ledger', 'Disclosure'] as const;
+const DISCLOSURE_ROLES = ['SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR'];
 
 export function CaseDetail() {
   const { id = '' } = useParams();
@@ -60,7 +62,7 @@ export function CaseDetail() {
       {c.view === 'SUMMARY' ? <SummaryView ctx={ctx} /> : (
         <>
           <nav className="flex flex-wrap gap-1" role="tablist">
-            {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
+            {TABS.filter((t) => t !== 'Disclosure' || DISCLOSURE_ROLES.includes(user!.role)).map((t) => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
               className={`rounded px-3 py-1.5 text-sm ${tab === t ? 'bg-accent text-white' : 'bg-white text-ink/70 hover:bg-white/60'}`}>{t}</button>)}
           </nav>
           {tab === 'Overview' && <Overview ctx={ctx} />}
@@ -69,6 +71,7 @@ export function CaseDetail() {
           {tab === 'Related' && <Related ctx={ctx} />}
           {tab === 'Findings & review' && <Review ctx={ctx} />}
           {tab === 'Ledger' && <Ledger caseId={c.caseId} />}
+          {tab === 'Disclosure' && <Disclosures ctx={ctx} />}
         </>
       )}
     </div>
@@ -133,6 +136,7 @@ function Overview({ ctx: { c, act, busy, role, userId } }: { ctx: Ctx }) {
       </div>
       <div className="space-y-4">
         <Section title="Timeline"><Timeline items={c.timeline} /></Section>
+        {c.grants?.identity && <IdentityReveal caseId={c.caseId} />}
         {c.status === 'TRIAGED' && (role === 'SAFETY_OFFICER' || role === 'REVIEW_BOARD') && <AssignBox caseId={c.caseId} act={act} busy={busy} />}
         {c.status === 'ASSIGNED' && assignedToMe && (
           <Section title="Assignment"><button className="btn-primary" disabled={busy} onClick={() => act(() => post(`/cases/${c.caseId}/accept`))}>Accept assignment</button>
@@ -346,5 +350,75 @@ function Ledger({ caseId }: { caseId: string }) {
         </tbody>
       </table>
     </Section>
+  );
+}
+
+function IdentityReveal({ caseId }: { caseId: string }) {
+  const [who, setWho] = useState<{ username: string; unit: string; depot: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Section title="Complainant identity">
+      {who ? <p className="text-sm"><strong>{who.username}</strong> · unit {who.unit} · {who.depot}</p> : (
+        <>
+          <p className="mb-2 text-sm text-ink/60">You hold an approved disclosure grant. Revealing is recorded on the ledger.</p>
+          <button className="btn-danger" onClick={() => apiFetch<typeof who>(`/cases/${caseId}/identity`).then(setWho, (e) => setError(errorText(e)))}>Reveal identity</button>
+        </>
+      )}
+      <ErrorNote error={error} />
+    </Section>
+  );
+}
+
+interface Grant { grantId: string; scope: 'FULL' | 'IDENTITY'; grantee: string; grantedBy: string; approvedBy: string | null; expiresAt: string;
+  revoked: boolean; active: boolean; awaitingApproval: boolean; reason: string | null; reasonVerified: boolean }
+
+function Disclosures({ ctx: { c, act, busy, role } }: { ctx: Ctx }) {
+  const list = useQuery({ queryKey: ['disclosures', c.caseId], queryFn: () => apiFetch<Grant[]>(`/cases/${c.caseId}/disclosures`) });
+  const board = role === 'REVIEW_BOARD';
+  const staff = useQuery({ queryKey: ['staff'], enabled: board, queryFn: () => apiFetch<{ id: string; username: string; role: string }[]>('/staff') });
+  const [f, setF] = useState({ granteeUserId: '', scope: 'FULL', reason: '', hours: 24 });
+  const status = (g: Grant) => (g.revoked ? 'revoked' : g.active ? 'active' : g.awaitingApproval ? 'awaiting 2nd approval' : 'expired');
+  return (
+    <div className="space-y-4">
+      <Section title="Disclosure grants">
+        <p className="mb-2 text-sm text-ink/60">Time-limited extra access, recorded on the ledger. Full case access needs one review-board member;
+          revealing the complainant's identity needs a second, different one.</p>
+        {!list.data?.length ? <p className="text-sm text-ink/60">No grants.</p> : (
+          <table className="w-full">
+            <thead><tr><th className="th">Scope</th><th className="th">To</th><th className="th">Granted / approved by</th><th className="th">Until</th><th className="th">Status</th><th className="th">Reason</th><th className="th" /></tr></thead>
+            <tbody>{list.data.map((g) => (
+              <tr key={g.grantId}>
+                <td className="td">{g.scope === 'FULL' ? 'Full case' : 'Identity'}</td><td className="td">{g.grantee}</td>
+                <td className="td">{g.grantedBy}{g.approvedBy && g.approvedBy !== g.grantedBy ? ` / ${g.approvedBy}` : ''}</td>
+                <td className="td">{fmt(g.expiresAt)}</td><td className="td">{status(g)}</td>
+                <td className="td text-xs">{g.reason}{g.reason && !g.reasonVerified && <span className="text-red-800"> (does not match ledger hash)</span>}</td>
+                <td className="td whitespace-nowrap space-x-1">
+                  {board && g.awaitingApproval && <button className="btn" disabled={busy} onClick={() => act(() => post(`/cases/${c.caseId}/disclosures/${g.grantId}/approve`))}>Approve</button>}
+                  {board && !g.revoked && <button className="btn-danger" disabled={busy} onClick={() => act(() => post(`/cases/${c.caseId}/disclosures/${g.grantId}/revoke`))}>Revoke</button>}
+                </td>
+              </tr>))}</tbody>
+          </table>
+        )}
+      </Section>
+      {board && (
+        <Section title="Grant access">
+          <div className="grid gap-2 md:grid-cols-3">
+            <select className="input" aria-label="Grantee" value={f.granteeUserId} onChange={(e) => setF({ ...f, granteeUserId: e.target.value })}>
+              <option value="">Grant to…</option>
+              {staff.data?.map((s) => <option key={s.id} value={s.id}>{s.username} · {s.role.replaceAll('_', ' ').toLowerCase()}</option>)}
+            </select>
+            <select className="input" aria-label="Scope" value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })}>
+              <option value="FULL">Full case access</option><option value="IDENTITY">Complainant identity</option>
+            </select>
+            <select className="input" aria-label="Duration" value={f.hours} onChange={(e) => setF({ ...f, hours: Number(e.target.value) })}>
+              {[2, 24, 72, 168].map((h) => <option key={h} value={h}>{h < 24 ? `${h} hours` : `${h / 24} day${h > 24 ? 's' : ''}`}</option>)}
+            </select>
+          </div>
+          <textarea className="input mt-2 h-20" placeholder="Reason (recorded; its hash goes on the ledger)" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} />
+          <button className="btn-primary mt-2" disabled={busy || !f.granteeUserId || f.reason.trim().length < 10}
+            onClick={() => act(() => post(`/cases/${c.caseId}/disclosures`, f).then(() => setF({ ...f, reason: '' })))}>Grant</button>
+        </Section>
+      )}
+    </div>
   );
 }
