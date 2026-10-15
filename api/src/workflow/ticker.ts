@@ -63,3 +63,13 @@ export function startTicker(jobs: Record<string, () => Promise<unknown>>, everyM
   }, everyMs);
   return () => clearInterval(handle);
 }
+
+/** Wraps a job so it runs at most once per `minutes` (the ticker itself fires every minute). */
+export function throttled(minutes: number, job: () => Promise<unknown>): () => Promise<unknown> {
+  let last = 0;
+  return async () => {
+    if (Date.now() - last < minutes * 60_000) return;
+    last = Date.now();
+    return job();
+  };
+}

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, NavLink, Outlet, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
 import './index.css';
+import { Anomalies } from './pages/Anomalies';
 import { AuditConsole } from './pages/AuditConsole';
 import { CaseDetail } from './pages/CaseDetail';
 import { CaseList } from './pages/CaseList';
@@ -67,6 +68,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/audit" element={<RequireRole roles={['AUDITOR', 'REVIEW_BOARD']}><AuditConsole /></RequireRole>} />
               <Route path="/graph" element={<RequireRole roles={['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR']}><KnowledgeGraph /></RequireRole>} />
               <Route path="/twin" element={<RequireRole roles={['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR', 'STORE_OFFICER']}><DigitalTwin /></RequireRole>} />
+              <Route path="/anomalies" element={<RequireRole roles={['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR']}><Anomalies /></RequireRole>} />
               <Route path="/cases/:id" element={<CaseDetail />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

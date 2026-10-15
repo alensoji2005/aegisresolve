@@ -7,7 +7,7 @@ import { MemoryBlobStore } from '../src/blob.js';
 import { loadConfig } from '../src/config.js';
 import { FakeLedger } from '../src/ledger/fakeLedger.js';
 import { migrate } from '../src/migrate.js';
-import type { AnalyzeResult } from '../src/triage/aiClient.js';
+import type { AnalyzeResult, AnomalyRow } from '../src/triage/aiClient.js';
 import { createUser, type NewUser } from '../src/users/service.js';
 import { testPool } from './pgtest.js';
 
@@ -44,6 +44,20 @@ export const fakeAi = {
       category: 'STORAGE_ENVIRONMENT', categoryProbs: { STORAGE_ENVIRONMENT: 0.91, INVENTORY_DISCREPANCY: 0.05 }, needsHumanTriage: false,
       topKeywords: ['humidity', 'damp'], entities: [], severityHits: 2, embedding: hashEmbedding(text), modelVersion: 'fake-1',
     };
+  },
+  /** Stand-in for the Isolation Forest: flags rows where any feature is > 3 population standard deviations from the mean. */
+  async scoreAnomalies(_family: string, rows: AnomalyRow[]) {
+    const names = [...new Set(rows.flatMap((r) => Object.keys(r.features)))];
+    const stat = Object.fromEntries(names.map((n) => {
+      const xs = rows.map((r) => r.features[n] ?? 0);
+      const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
+      return [n, { mean, sd: Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length) || 1 }];
+    }));
+    return rows.map((r) => {
+      const explanation = names.map((n) => ({ feature: n, value: r.features[n] ?? 0, baseline: stat[n].mean, z: ((r.features[n] ?? 0) - stat[n].mean) / stat[n].sd, basis: 'all subjects' }))
+        .filter((e) => Math.abs(e.z) > 3).sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
+      return { subject: r.subject, day: r.day, score: explanation[0] ? Math.abs(explanation[0].z) : 0, anomalous: explanation.length > 0, explanation };
+    });
   },
 };
 

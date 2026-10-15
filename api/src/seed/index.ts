@@ -8,7 +8,7 @@ import { createPool } from '../db.js';
 import { makeLedger } from '../ledger/index.js';
 import { migrate } from '../migrate.js';
 import { HttpAiClient } from '../triage/aiClient.js';
-import { seedDomain } from './domain.js';
+import { seedAccessHistory, seedDomain } from './domain.js';
 import { mulberry32 } from './prng.js';
 import { seedUsers } from './users.js';
 
@@ -23,6 +23,7 @@ export async function seed(deps: AppDeps, credentialsPath = CREDENTIALS_PATH): P
   await mkdir(path.dirname(credentialsPath), { recursive: true });
   await writeFile(credentialsPath, JSON.stringify(creds, null, 2), { mode: 0o600 });
   const { events } = await seedDomain(deps, mulberry32(42));
+  await seedAccessHistory(deps, mulberry32(7));
   return { status: 'seeded', users: creds.length, events };
 }
 

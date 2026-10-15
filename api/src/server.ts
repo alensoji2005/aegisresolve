@@ -1,3 +1,4 @@
+import { runAnomalyScan } from './anomaly/service.js';
 import { buildApp, type AppDeps } from './app.js';
 import { type BlobStore, FsBlobStore, MemoryBlobStore, S3BlobStore } from './blob.js';
 import { loadConfig } from './config.js';
@@ -8,7 +9,7 @@ import { CREDENTIALS_PATH, seed } from './seed/index.js';
 import { HttpAiClient } from './triage/aiClient.js';
 import { runTriage } from './triage/job.js';
 import { fillSensorReadings } from './twin/service.js';
-import { runSweeps, startTicker } from './workflow/ticker.js';
+import { runSweeps, startTicker, throttled } from './workflow/ticker.js';
 
 /**
  * OFFLINE=1 runs a self-contained demo without Docker or Fabric: embedded Postgres, in-memory ledger and blobs,
@@ -40,6 +41,7 @@ async function main() {
   const stopTicker = startTicker({
     sla: () => runSweeps(deps, triage),
     sensors: () => fillSensorReadings(deps),
+    anomalies: throttled(60, () => runAnomalyScan(deps)),
   });
   await app.listen({ port: cfg.PORT, host: '127.0.0.1' });
   const shutdown = async () => {

@@ -73,6 +73,13 @@ export async function loadCaseFor(deps: AppDeps, user: AuthUser, caseId: string)
   return { row, facts };
 }
 
+/** Logs a sensitive read on-chain (non-repudiable) and in access_events (feeds access anomaly detection). */
+export async function recordAccess(deps: AppDeps, user: AuthUser, caseId: string, scope: string): Promise<void> {
+  const { txId } = await deps.ledger.submit(await loadLedgerUser(deps, user.id), 'complaint:logAccess', [caseId, scope]);
+  await deps.pool.query('insert into access_events(user_id, action, resource, at, ledger_tx_id) values ($1,$2,$3,$4,$5)',
+    [user.id, scope.split(':')[0], caseId, deps.now(), txId]);
+}
+
 export async function decryptContent(deps: AppDeps, caseId: string): Promise<{ title: string; description: string; contentSha256: string }> {
   const { rows } = await deps.pool.query('select * from case_content where case_id = $1', [caseId]);
   if (!rows[0]) throw notFound('case content');
@@ -99,7 +106,7 @@ export async function getCaseView(deps: AppDeps, user: AuthUser, caseId: string)
   };
   if (!authorize(user, 'case:read:full', facts)) return summary;
 
-  await deps.ledger.submit(lu, 'complaint:logAccess', [caseId, 'FULL']);
+  await recordAccess(deps, user, caseId, 'FULL');
   const content = await decryptContent(deps, caseId);
   const people = await usernamesByFabricId(deps, [c.investigator?.id, ...c.approvals.map((a) => a.signer)].filter((x): x is string => !!x));
   const ai = (await deps.pool.query('select category_probs, entities, risk_explanation, model_versions from case_ai where case_id = $1', [caseId])).rows[0] ?? null;

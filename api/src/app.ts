@@ -5,6 +5,7 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify';
 import type pg from 'pg';
+import { anomalyRoutes } from './anomaly/routes.js';
 import { auditRoutes } from './audit/routes.js';
 import { authenticate, userOf } from './auth/plugin.js';
 import { authRoutes } from './auth/routes.js';
@@ -34,7 +35,7 @@ export interface AppDeps {
 }
 
 /** Feature route modules register here; each gets the shared deps and runs behind authentication. */
-export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes, graphRoutes];
+export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes, graphRoutes, anomalyRoutes];
 
 export function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? (process.env.NODE_ENV !== 'test' && !process.env.VITEST), bodyLimit: 1024 * 1024 });

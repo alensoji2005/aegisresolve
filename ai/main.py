@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from ai.analyze import _models, analyze
+from ai.anomaly import score_rows
 
 app = FastAPI(title="AegisResolve AI", docs_url=None, redoc_url=None)
 
@@ -36,3 +37,19 @@ def health() -> dict:
 @app.post("/analyze", dependencies=[Depends(require_secret)])
 def analyze_route(body: AnalyzeIn) -> dict:
     return analyze(body.text)
+
+
+class AnomalyRow(BaseModel):
+    subject: str = Field(min_length=1, max_length=100)
+    day: str = Field(min_length=10, max_length=10)
+    features: dict[str, float]
+
+
+class AnomalyIn(BaseModel):
+    family: str = Field(pattern=r'^(lifecycle|access|sensor)$')
+    rows: list[AnomalyRow] = Field(max_length=50000)
+
+
+@app.post('/anomaly/score', dependencies=[Depends(require_secret)])
+def anomaly_route(body: AnomalyIn) -> dict:
+    return {'family': body.family, 'results': score_rows([r.model_dump() for r in body.rows])}

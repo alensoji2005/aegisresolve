@@ -3,7 +3,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import type { EvidenceAnchor } from '../../../chaincode/aegis-cc/src/types.js';
 import type { AppDeps } from '../app.js';
 import { authorize, type AuthUser } from '../auth/authorize.js';
-import { loadCaseFor } from '../cases/service.js';
+import { loadCaseFor, recordAccess } from '../cases/service.js';
 import { open, openString, seal, sealString, sha256Hex, sha3Hex } from '../crypto.js';
 import { ApiError, forbidden, notFound } from '../errors.js';
 import type { LedgerUser } from '../ledger/ledger.js';
@@ -120,7 +120,7 @@ export async function downloadEvidence(deps: AppDeps, user: AuthUser, caseId: st
   const { facts } = await loadCaseFor(deps, user, caseId);
   if (!authorize(user, 'evidence:read', facts)) throw forbidden();
   const row = await evidenceRow(deps, caseId, evidenceId);
-  await deps.ledger.submit(await loadLedgerUser(deps, user.id), 'complaint:logAccess', [caseId, `EVIDENCE:${row.id}`]);
+  await recordAccess(deps, user, caseId, `EVIDENCE:${row.id}`);
   const data = open({ ciphertext: await deps.blobs.get(row.object_key), iv: row.iv, authTag: row.auth_tag, dekWrapped: row.dek_wrapped }, deps.cfg.AEGIS_KEK);
   return { data, mimeType: row.mime_type as string, filename: openString(row.original_name_enc, deps.cfg.AEGIS_KEK) };
 }

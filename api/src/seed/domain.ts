@@ -66,6 +66,12 @@ export function buildDomain(rnd: Rnd, now: Date) {
         at: new Date(now.getTime() - d * DAY + int(rnd, 8, 12) * HOUR), payload: { discrepancy } });
     }
   }
+  // Planted anomaly (ground truth for eval:anomaly): PER-107 issues six DEP-01 lots in one night, with no returns.
+  const night = dayStart(now.getTime() - PLANTED.lifecycle.daysAgo * DAY) + HOUR;
+  assets.filter((a) => a.depot === 'DEP-01').slice(0, 6).forEach((a, i) => {
+    events.push({ asset: a.id, type: 'ISSUE', from: a.location, to: null, qty: int(rnd, 25, 40), actor: PLANTED.lifecycle.subject, unit: 'U1',
+      at: new Date(night + i * 20 * 60e3), payload: {} });
+  });
   events.sort((x, y) => x.at.getTime() - y.at.getTime() || (x.asset < y.asset ? -1 : 1));
   events.forEach((e, i) => { e.id = `EVT-${String(i + 1).padStart(6, '0')}`; });
 
@@ -84,6 +90,53 @@ export function buildDomain(rnd: Rnd, now: Date) {
 }
 
 const round = (x: number) => Math.round(x * 10) / 10;
+const dayStart = (ms: number) => Math.floor(ms / DAY) * DAY;
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/** Anomalies deliberately planted by the seed, relative to the seed time. */
+export const PLANTED = {
+  lifecycle: { subject: 'PER-107', daysAgo: 3, what: 'six lots issued between 01:00 and 03:00 with no returns' },
+  access: { subject: 'inv2', daysAgo: 1, what: 'night burst: 9 full case views and 14 evidence downloads between 01:00 and 03:00' },
+  sensor: { prefix: `${EXCURSION_MAGAZINE}/`, what: '48 h humidity excursion (RH 85%) in every bay of the magazine, starting 6 days before seeding' },
+};
+
+/** True when an anomaly (family, subject, YYYY-MM-DD day) is one of the planted ones for a seed run at `seededAt`. */
+export function isPlanted(a: { family: string; subject: string; day: string }, seededAt: Date): boolean {
+  const t = seededAt.getTime();
+  if (a.family === 'lifecycle') return a.subject === PLANTED.lifecycle.subject && a.day === isoDay(t - PLANTED.lifecycle.daysAgo * DAY);
+  if (a.family === 'access') return a.subject === PLANTED.access.subject && a.day === isoDay(t - PLANTED.access.daysAgo * DAY);
+  if (a.family === 'sensor') {
+    const start = Math.floor(t / HOUR) * HOUR - 6 * DAY;
+    return a.subject.startsWith(PLANTED.sensor.prefix) && [isoDay(start), isoDay(start + 24 * HOUR), isoDay(start + 48 * HOUR - HOUR)].includes(a.day);
+  }
+  return false;
+}
+
+/** 30 days of ordinary daytime case access by oversight staff, plus the planted night burst by inv2. Feeds access anomaly detection. */
+export async function seedAccessHistory(deps: AppDeps, rnd: Rnd): Promise<number> {
+  const now = deps.now().getTime();
+  const { rows: staff } = await deps.pool.query(`select id, username from users where role in ('INVESTIGATOR','SAFETY_OFFICER','REVIEW_BOARD','AUDITOR') order by username`);
+  const user: string[] = [], action: string[] = [], resource: string[] = [], at: Date[] = [];
+  const add = (u: string, a: string, r: string, ms: number) => { user.push(u); action.push(a); resource.push(r); at.push(new Date(ms)); };
+  const fakeCase = () => `CASE-${new Date(now).getUTCFullYear()}-9${String(int(rnd, 0, 99999)).padStart(5, '0')}`;
+  for (const s of staff) {
+    for (let d = 30; d >= 2; d--) {
+      const day = dayStart(now - d * DAY);
+      for (let k = int(rnd, 1, 5); k > 0; k--) add(s.id, 'FULL', fakeCase(), day + int(rnd, 8, 17) * HOUR + int(rnd, 0, 59) * 60e3);
+      if (rnd() < 0.4) add(s.id, 'EVIDENCE', fakeCase(), day + int(rnd, 9, 16) * HOUR);
+    }
+  }
+  const burstUser = staff.find((s) => s.username === PLANTED.access.subject);
+  if (burstUser) {
+    const night = dayStart(now - PLANTED.access.daysAgo * DAY) + HOUR;
+    const cases = Array.from({ length: 9 }, fakeCase);
+    cases.forEach((c, i) => add(burstUser.id, 'FULL', c, night + i * 5 * 60e3));
+    for (let i = 0; i < 14; i++) add(burstUser.id, 'EVIDENCE', cases[i % cases.length], night + 45 * 60e3 + i * 6 * 60e3);
+  }
+  await deps.pool.query(`insert into access_events(user_id, action, resource, at) select * from unnest($1::uuid[], $2::text[], $3::text[], $4::timestamptz[])`,
+    [user, action, resource, at]);
+  return user.length;
+}
 
 /** In-bounds synthetic reading for an hour: daily temperature/humidity cycle plus noise (n1, n2 in [0,1)). */
 export function normalReading(ts: number, n1: number, n2: number): { temp: number; rh: number } {
