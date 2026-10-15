@@ -182,23 +182,64 @@ Show the architecture: React UI → Fastify API → Hyperledger Fabric (2 orgs) 
    docker compose exec -T postgres psql -U aegis -c "update cases set status = ledger_json->>'status';"
    ```
 
+### Step 8 — Depot twin, anomalies and the knowledge graph (`audit1`, 3 min)
+
+1. Open **Depot twin**. Every bay shows its live temperature and humidity (synthetic sensors, refreshed every 30 s). In DEP-02 / MAG-01 the bays have a dashed border: a 48-hour humidity excursion. Click BAY-04 to see the humidity line crossing the red limit.
+2. Open **Anomalies** and click **Run scan now**. Point out the three planted anomalies and their explanations:
+   - `inv2`: evidence downloads 14 vs a usual 0.3, at night. *"Someone browsing evidence at 2am."*
+   - `PER-107`: issued six lots overnight with no returns.
+   - The four DEP-02/MAG-01 bays: the humidity excursion.
+
+   "Every flag says why. If the model can't explain a flag, it doesn't raise it."
+3. Click `PER-107`. The **Knowledge graph** opens on that person's custody events and lots. Click the lot from step 1 to see its cases, its location and everyone who handled it.
+
+### Step 9 — Controlled disclosure (`board1`, `board2`, `safety1`, 2 min)
+
+1. As `board1`, open the case → **Disclosure** tab → grant `safety1` **Complainant identity** for 2 hours, with a reason. Its status is *awaiting 2nd approval*.
+2. As `board2`, click **Approve**. One person alone can never reveal an identity.
+3. As `safety1`, open the case; **Reveal identity** now appears. Click it.
+4. As `audit1`, look the case up in the **Audit console**. The access log shows *safety1 · identity* on the ledger.
+
 ### Closing (1 min)
 
 Recap the four properties and what proves each:
-- **Tamper evidence:** the reconcile and verify results.
-- **Accountability:** signed transactions, multi-signature closure, and the R4 block.
-- **Privacy:** pseudonyms, encryption, and role-based views.
-- **Intelligence:** explainable triage and duplicate detection.
+- **Tamper evidence:** the reconcile and verify results, and `eval/results/tamper.md` (blockchain 4/4 attacks detected vs centralised database 0/4).
+- **Accountability:** signed transactions, multi-signature closure, the R4 block, and two-person identity disclosure.
+- **Privacy:** pseudonyms, encryption, role-based views (147 automated access checks), and time-limited grants.
+- **Intelligence:** explainable triage (0.78 macro-F1 on hand-written complaints), duplicate detection, anomaly detection (all planted anomalies found).
 
 Then state the limitations honestly:
 - Synthetic data only.
 - The API holds users' Fabric keys (custodial wallets).
-- The classifier score is inflated by the templated training data.
-- OCR, the knowledge graph and anomaly detection are planned next.
+- The classifier's 1.0 on synthetic data is meaningless; quote the challenge-set number.
+- Not built yet: OCR/speech-to-text, governance contract for policy changes, PDF reports.
+
+---
+
+## Part 3b — Evaluation results for the report
+
+Run these in the codespace with the stack up. They write Markdown tables to `eval/results/`; details are in `eval/README.md`.
+```bash
+pnpm --filter @aegis/api eval:tamper -- --fabric     # blockchain vs centralised DB under insider tampering
+pnpm --filter @aegis/api eval:bench -- --fabric      # Fabric throughput and latency
+pnpm --filter @aegis/api eval:anomaly                # planted anomalies found? (needs the AI service)
+ai/.venv/bin/python -m ai.evaluate                   # classifier + duplicate detection
+pnpm --filter @aegis/api test rbac-matrix            # every role x every endpoint
+```
 
 ---
 
 ## Part 4 — Maintenance and troubleshooting
+
+### 4.0 After pulling new code
+
+If `chaincode/aegis-cc` changed, deploy it with the next sequence number, then restart the app. For example, after the disclosure update, if your last deploy was 2:
+```bash
+git pull
+bash network/deploy.sh 3
+bash scripts/start-app.sh
+```
+Database migrations run on API start.
 
 ### 4.1 Clean reset (fresh blockchain + database)
 

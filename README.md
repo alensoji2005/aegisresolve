@@ -34,7 +34,7 @@ pnpm --filter @aegis/api demo:smoke                                             
 
 Logins are in `seed/credentials.local.json` (git-ignored). Add each user's `totpSecret` to an authenticator app.
 
-## Option B — full stack (Fabric + Postgres + MinIO)
+## Option B — full stack (Fabric + Postgres)
 
 Needs WSL2 Ubuntu + Docker Desktop. See [network/README.md](network/README.md).
 
@@ -54,17 +54,34 @@ pnpm --filter @aegis/api demo:smoke
 2. Edit the database: `update cases set status='CLOSED' where case_id='CASE-2026-000001';`. Reconcile then shows a `status` mismatch against the ledger.
 3. Flip one byte of an evidence object in MinIO (`mc cp`, edit, re-upload). *Verify all* then reports `cipherHashOk` failed.
 
+## Features
+
+- **Ledger and workflow:**
+  - Complaint registry on Fabric, with per-user Fabric identities and an on-chain access log.
+  - Conflict-of-interest rules R1–R4, multi-signature closure, SLA escalation and appeals.
+- **Privacy and access:**
+  - Password + authenticator-app login.
+  - Pseudonymous complainants and encrypted evidence anchored on-chain.
+  - Controlled disclosure: time-limited grants, with a two-person rule to reveal a complainant's identity.
+- **Intelligence:**
+  - AI triage with an explainable risk score.
+  - Duplicate and related-case detection, and linking cases to lifecycle events.
+  - Explainable anomaly detection over custody, access and sensor data.
+- **Oversight views:** audit reconcile, knowledge graph, and a digital twin with a live sensor simulator.
+- **Evaluation suite** for objectives 12–13; see [eval/README.md](eval/README.md).
+
 ## Tests
 
 ```bash
-npm test --prefix chaincode/aegis-cc      # 59 chaincode rule/contract tests
-pnpm --filter @aegis/api test             # 98 API tests (embedded Postgres, in-memory ledger)
+npm test --prefix chaincode/aegis-cc      # 66 chaincode rule/contract tests
+pnpm --filter @aegis/api test             # 266 API tests incl. 147-case RBAC matrix (embedded Postgres, in-memory ledger)
 pnpm --filter @aegis/web test
 ai/.venv/Scripts/python -m pytest ai/tests
 ```
 
-## Known limitations (MVP)
+## Known limitations
 
 - Custodial wallets: the API holds users' Fabric keys, encrypted with `WALLET_KEK`. A production system would use HSMs or smart cards.
-- The synthetic, templated corpus makes the classifier score unrealistically high (macro-F1 1.0). Evaluate on a hand-written challenge set before quoting accuracy.
-- No TOTP replay protection, and no RFC 3161 timestamps. OCR/STT, the knowledge graph, the digital twin and anomaly detection are deferred (see the plan).
+- Synthetic data only. The classifier scores 1.0 on the templated test split but 0.78 macro-F1 on hand-written complaints; quote the latter.
+- No TOTP replay protection and no RFC 3161 timestamps.
+- Not built: OCR/speech-to-text, a governance contract for policy changes, PDF reports.
