@@ -139,7 +139,9 @@ async function inProcessMode(mode: 'fake' | 'postgres'): Promise<ModeResult> {
 async function fabricMode(): Promise<ModeResult> {
   const cfg = loadConfig();
   if (cfg.LEDGER_MODE !== 'fabric') throw new Error('--fabric needs LEDGER_MODE=fabric in .env');
-  const pool = createPool(cfg.DATABASE_URL);
+  // Strongest insider: holds the application's own DB write token, so the database guard does not stop them.
+  // This isolates what the ledger alone detects.
+  const pool = createPool(cfg.DATABASE_URL, cfg.DB_WRITE_TOKEN);
   const { FsBlobStore } = await import('../src/blob.js');
   const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg, pool), blobs: new FsBlobStore(cfg.BLOB_DIR ?? '../data/blobs'),
     ai: { analyze: async () => { throw new Error('not used'); } } as any, now: () => new Date() };

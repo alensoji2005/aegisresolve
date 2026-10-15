@@ -36,6 +36,7 @@ if [ ! -f .env ]; then
       -e "s|^JWT_SECRET=.*|JWT_SECRET=$(b64 64)|" \
       -e "s|^WALLET_KEK=.*|WALLET_KEK=$(b64 32)|" \
       -e "s|^AI_SHARED_SECRET=.*|AI_SHARED_SECRET=$(openssl rand -hex 24)|" \
+      -e "s|^DB_WRITE_TOKEN=.*|DB_WRITE_TOKEN=$(openssl rand -hex 32)|" \
       -e "s|^FABRIC_ORGS_DIR=.*|FABRIC_ORGS_DIR=$HOME/fabric-samples/test-network/organizations|" \
       .env.example > .env
   chmod 600 .env

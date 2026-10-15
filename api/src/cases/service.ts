@@ -6,6 +6,7 @@ import { openString, pseudonymFor, sealString, sha256Hex } from '../crypto.js';
 import { ApiError, notFound } from '../errors.js';
 import { activeGrants } from '../disclosure/service.js';
 import { loadLedgerUser } from '../users/service.js';
+import { countTamperAttempts } from '../audit/integrity.js';
 import { OUTCOME_VISIBLE, projectCase } from './projection.js';
 
 export const createCaseSchema = z.object({
@@ -107,6 +108,7 @@ export async function getCaseView(deps: AppDeps, user: AuthUser, caseId: string)
     outcome: OUTCOME_VISIBLE.includes(c.status) ? c.outcome : null, closedAt: c.closedAt, createdAt: c.createdAt, triageStatus: row.triage_status, isOwner: facts.ownedByUser, timeline,
     view: 'SUMMARY' as 'SUMMARY' | 'FULL',
     grants: ['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR'].includes(user.role) ? await activeGrants(deps, user, caseId) : null,
+    blockedTamperAttempts: ['SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR'].includes(user.role) ? await countTamperAttempts(deps, caseId) : null,
   };
   if (!authorize(user, 'case:read:full', facts)) return summary;
 

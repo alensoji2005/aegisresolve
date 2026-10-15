@@ -3,7 +3,7 @@ import { buildApp, type AppDeps } from './app.js';
 import { runIntegritySweep } from './audit/routes.js';
 import { type BlobStore, FsBlobStore, MemoryBlobStore, S3BlobStore } from './blob.js';
 import { loadConfig } from './config.js';
-import { createPool } from './db.js';
+import { createPool, registerWriterToken } from './db.js';
 import { makeLedger } from './ledger/index.js';
 import { migrate } from './migrate.js';
 import { CREDENTIALS_PATH, seed } from './seed/index.js';
@@ -27,9 +27,10 @@ async function main() {
     stopDb = db.stop;
   }
   const cfg = loadConfig();
-  const pool = createPool(cfg.DATABASE_URL);
+  const pool = createPool(cfg.DATABASE_URL, cfg.DB_WRITE_TOKEN);
   if (offline) pool.options.max = 1;
   await migrate(pool);
+  console.log(`database tamper guard: ${await registerWriterToken(pool, cfg.DB_WRITE_TOKEN)}`);
   const blobs: BlobStore = offline ? new MemoryBlobStore() : cfg.BLOB_DIR ? new FsBlobStore(cfg.BLOB_DIR) : new S3BlobStore(cfg);
   const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg, pool), blobs, ai: new HttpAiClient(cfg), now: () => new Date() };
   if (offline) {

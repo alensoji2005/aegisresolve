@@ -115,3 +115,44 @@ export async function listIncidents(deps: AppDeps, caseId?: string) {
      from integrity_incidents where $1::text is null or case_id = $1 order by detected_at desc, id desc limit 200`, [caseId ?? null]);
   return rows;
 }
+
+export interface FieldChange { field: string; original: unknown; attempted: unknown }
+
+const HIDDEN = /(_enc|_hash|dek_wrapped|^iv$|auth_tag|wallet_|totp)/;
+const show = (field: string, v: unknown) => (HIDDEN.test(field) && v != null ? '(encrypted / secret value)' : v);
+
+/** Field-level differences between the protected row and what the attempt tried to write (one level into JSON columns). */
+export function diffRows(oldRow: Record<string, any> | null, newRow: Record<string, any> | null): FieldChange[] {
+  if (!oldRow || !newRow) return [];
+  const out: FieldChange[] = [];
+  for (const k of Object.keys(newRow)) {
+    if (k === 'updated_at' || JSON.stringify(oldRow[k]) === JSON.stringify(newRow[k])) continue;
+    const a = oldRow[k], b = newRow[k];
+    if (a && b && typeof a === 'object' && typeof b === 'object' && !Array.isArray(a)) {
+      for (const sub of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (JSON.stringify(a[sub]) !== JSON.stringify(b[sub])) out.push({ field: `${k}.${sub}`, original: show(sub, a[sub]), attempted: show(sub, b[sub]) });
+      }
+    } else {
+      out.push({ field: k, original: show(k, a), attempted: show(k, b) });
+    }
+  }
+  return out;
+}
+
+/** Writes the database guard blocked (migration 006). The protected rows were never changed. */
+export async function listTamperAttempts(deps: AppDeps, caseId?: string) {
+  const { rows } = await deps.pool.query(
+    `select id, table_name, operation, row_key, old_row, attempted_row, db_user, host(client_addr) as client_addr, application_name, query, attempted_at
+     from tamper_attempts where $1::text is null or row_key = $1 order by attempted_at desc, id desc limit 200`, [caseId ?? null]);
+  return rows.map((r) => ({
+    id: r.id, table: r.table_name, operation: r.operation, rowKey: r.row_key, attemptedAt: r.attempted_at,
+    dbUser: r.db_user, clientAddr: r.client_addr, application: r.application_name || null, query: r.query,
+    changes: r.operation === 'UPDATE' ? diffRows(r.old_row, r.attempted_row) : [],
+    outcome: r.operation === 'UPDATE' ? 'Original values kept' : r.operation === 'DELETE' ? 'Row not deleted' : 'Row not inserted',
+  }));
+}
+
+export async function countTamperAttempts(deps: AppDeps, caseId: string): Promise<number> {
+  const { rows } = await deps.pool.query('select count(*)::int as n from tamper_attempts where row_key = $1', [caseId]);
+  return rows[0].n;
+}

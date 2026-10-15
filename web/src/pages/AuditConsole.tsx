@@ -18,6 +18,11 @@ const CHECK_LABEL = {
   ledgerMatch: 'Database hashes differ from the ledger',
 };
 
+interface Attempt {
+  id: number; table: string; operation: string; rowKey: string | null; attemptedAt: string; dbUser: string; clientAddr: string | null;
+  query: string | null; outcome: string; changes: { field: string; original: unknown; attempted: unknown }[];
+}
+
 interface Incident { id: number; kind: string; caseId: string; action: string; detectedBy: string; detectedAt: string }
 
 const INCIDENT_KIND: Record<string, string> = {
@@ -52,6 +57,7 @@ export function AuditConsole() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [repair, setRepair] = useState<{ repaired: Mismatch[]; unrepairable: Mismatch[] } | null>(null);
+  const attempts = useQuery({ queryKey: ['tamper-attempts'], queryFn: () => apiFetch<Attempt[]>('/audit/tamper-attempts'), refetchInterval: 15_000 });
   const incidents = useQuery({ queryKey: ['incidents'], queryFn: () => apiFetch<Incident[]>('/audit/incidents'), refetchInterval: 60_000 });
 
   const run = (name: string, fn: () => Promise<void>) => async () => {
@@ -124,6 +130,38 @@ export function AuditConsole() {
             ))}
         </Section>
       </div>
+      <Section title="Blocked tampering attempts (database guard)" actions={<button className="btn" onClick={() => attempts.refetch()}>Refresh</button>}>
+        <p className="mb-2 text-sm text-ink/60">Direct edits to protected tables from outside the application. The command appears to succeed for
+          whoever ran it, but the original data is kept and the attempt is recorded here. This log cannot be edited or deleted.</p>
+        {!attempts.data?.length ? <p className="text-sm text-ink/60">No attempts.</p> : (
+          <ul className="space-y-2">
+            {attempts.data.map((a) => (
+              <li key={a.id} className="rounded border-l-4 border-amber-600 bg-amber-50 p-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-ink px-1.5 py-0.5 text-xs font-semibold text-white">🛡 BLOCKED</span>
+                  <span className="font-semibold">{a.operation} on <span className="font-mono">{a.table}</span></span>
+                  {a.rowKey && <span className="font-mono text-xs">{a.rowKey}</span>}
+                  <span className="text-ink/60">{fmt(a.attemptedAt)} · by <span className="font-mono">{a.dbUser}</span>{a.clientAddr ? ` from ${a.clientAddr}` : ''}</span>
+                  <span className="ml-auto font-semibold text-accent">✓ {a.outcome}</span>
+                </div>
+                {a.changes.length > 0 && (
+                  <table className="mt-2 w-full">
+                    <thead><tr><th className="th">Field</th><th className="th">Original (kept)</th><th className="th">Attempted (blocked)</th></tr></thead>
+                    <tbody>{a.changes.map((c) => (
+                      <tr key={c.field}>
+                        <td className="td font-mono text-xs">{c.field}</td>
+                        <td className="td font-mono text-xs text-accent">{short(JSON.stringify(c.original ?? null), 40)}</td>
+                        <td className="td font-mono text-xs text-red-800 line-through">{short(JSON.stringify(c.attempted ?? null), 40)}</td>
+                      </tr>))}</tbody>
+                  </table>
+                )}
+                {a.query && <details className="mt-1"><summary className="cursor-pointer text-xs text-ink/60">SQL that was run</summary>
+                  <pre className="mono mt-1 whitespace-pre-wrap rounded bg-white p-2">{a.query}</pre></details>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
       <Section title="Integrity incidents" actions={<button className="btn" onClick={() => incidents.refetch()}>Refresh</button>}>
         <p className="mb-2 text-sm text-ink/60">Every detected tampering and the automatic response. The background check runs every 5 minutes.</p>
         {!incidents.data?.length ? <p className="text-sm text-ink/60">No incidents.</p> : (

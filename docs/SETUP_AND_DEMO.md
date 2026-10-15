@@ -165,11 +165,22 @@ Show the architecture: React UI → Fastify API → Hyperledger Fabric (2 orgs) 
 ### Step 7 — Tamper detection (`audit1` + terminal, 2 min)
 
 1. As `audit1`, open the **Audit console**. Click **Run reconcile** and **Verify all**; both are green.
-2. In the terminal, act as an insider editing the database directly:
+2. **Line of defence 1: the database guard.** In the terminal, act as an insider editing the database directly (use your case ID):
    ```bash
-   docker compose exec -T postgres psql -U aegis -c "update cases set status='CLOSED_FINAL' where case_id='CASE-2026-000001';"
+   docker compose exec -T postgres psql -U aegis -c "update cases set status='CLOSED_FINAL', outcome='NOT_SUBSTANTIATED' where case_id='CASE-2026-000001';"
    ```
-   Run reconcile again. A red row shows **status: ledger SUBMITTED / database CLOSED_FINAL** (use whatever case ID you filed in step 1).
+   The terminal prints **`UPDATE 1`**, so it looks as if it worked. Check:
+   ```bash
+   docker compose exec -T postgres psql -U aegis -c "select status, outcome from cases where case_id='CASE-2026-000001';"
+   ```
+   It's unchanged. In the **Audit console**, **Blocked tampering attempts** shows the edit: *status: "SUBMITTED" (kept) → ~~"CLOSED_FINAL"~~ (blocked)*, plus who ran it, from where, and the exact SQL. The case page shows a 🛡 banner: *attempt blocked, the data shown is the original*. Try `delete from case_content …` as well: `DELETE 0`, nothing removed. Even this log can't be deleted.
+
+   "Only the application holds the secret write token. Any other session, including a DBA in psql, is treated as tampering: the change is silently discarded and recorded."
+   - **Line of defence 2**, for an insider who has stolen the app's token. Run the edit as if you had it:
+     ```bash
+     T=$(grep ^DB_WRITE_TOKEN .env | cut -d= -f2); docker compose exec -T postgres psql -U aegis -c "select set_config('aegis.writer','$T',false); update cases set status='CLOSED_FINAL' where case_id='CASE-2026-000001';"
+     ```
+     Now **Run reconcile**: a red row, because the database disagrees with the blockchain. **Repair from blockchain** fixes it (see 4).
 3. Tamper with an evidence file on disk:
    ```bash
    f=$(ls data/blobs/evidence/*/* | head -1); printf 'x' | dd of="$f" bs=1 seek=0 conv=notrunc 2>/dev/null; echo "tampered $f"
@@ -337,6 +348,11 @@ bash scripts/start-app.sh
 - **N** is one more than your last deploy. A clean reset (4.1) restarts the count at 1, so the first deploy after a reset is 2.
 - If you don't know N, try any number. Fabric replies *"requested sequence X is larger than the next available sequence number Y"*; rerun with Y.
 - `deploy.sh` restarts stopped Fabric containers first. Database migrations run automatically when the API starts.
+- **Database tamper guard:** codespaces created before this feature have no `DB_WRITE_TOKEN`. Add one once, then restart the app. The API log should say `database tamper guard: registered`:
+  ```bash
+  echo "DB_WRITE_TOKEN=$(openssl rand -hex 32)" >> .env
+  ```
+  Never change the token afterwards: the API refuses to start with a different one. (A clean reset, 4.1, clears it along with the database.)
 
 ### 4.1 Clean reset (fresh blockchain + database)
 

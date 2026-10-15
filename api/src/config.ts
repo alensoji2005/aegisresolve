@@ -22,6 +22,8 @@ const schema = z.object({
   PSEUDONYM_SECRET: b64('PSEUDONYM_SECRET', 32),
   JWT_SECRET: b64('JWT_SECRET', 64),
   WALLET_KEK: b64('WALLET_KEK', 32),
+  /** Secret proving a DB session is the application (tamper guard). Optional: without it the guard stays inactive. */
+  DB_WRITE_TOKEN: z.string().min(32, 'DB_WRITE_TOKEN must be at least 32 characters').optional(),
   LEDGER_MODE: z.enum(['fabric', 'fake', 'postgres']).default('fabric'),
   FABRIC_CHANNEL: z.string().default('aegischannel'),
   FABRIC_CHAINCODE: z.string().default('aegis-cc'),

@@ -5,7 +5,7 @@ import { authorize, type AuthUser } from '../auth/authorize.js';
 import { parse, userOf } from '../auth/plugin.js';
 import { forbidden } from '../errors.js';
 import { loadLedgerUser, systemUser } from '../users/service.js';
-import { listIncidents, reconcile, repairFromLedger, verifyAllEvidence } from './integrity.js';
+import { listIncidents, listTamperAttempts, reconcile, repairFromLedger, verifyAllEvidence } from './integrity.js';
 
 function auditor(req: FastifyRequest): AuthUser {
   const user = userOf(req);
@@ -33,6 +33,12 @@ export function auditRoutes(deps: AppDeps): FastifyPluginAsync {
       auditor(req);
       const { caseId } = parse(z.object({ caseId: caseIdSchema.optional() }), req.query);
       return listIncidents(deps, caseId);
+    });
+
+    app.get('/audit/tamper-attempts', async (req) => {
+      auditor(req);
+      const { caseId } = parse(z.object({ caseId: caseIdSchema.optional() }), req.query);
+      return listTamperAttempts(deps, caseId);
     });
 
     app.get('/audit/access-log', async (req) => {

@@ -17,6 +17,7 @@ interface CaseView {
   findings?: { body: { body: string; outcome: string; correctiveAction: string | null }; createdAt: string } | null;
   grants?: { full: boolean; identity: boolean } | null;
   integrity?: { contentIntact: boolean };
+  blockedTamperAttempts?: number | null;
   ai?: { categoryProbs: Record<string, number>; entities: { type: string; value: string }[];
     explanation: { factors: Factor[]; topKeywords: string[]; needsHumanTriage: boolean; recurring: boolean } | null } | null;
 }
@@ -60,6 +61,13 @@ export function CaseDetail() {
         {c.outcome && <span className="text-sm">Outcome: <strong>{c.outcome.replaceAll('_', ' ').toLowerCase()}</strong></span>}
       </header>
       <ErrorNote error={error} />
+      {!!c.blockedTamperAttempts && (
+        <div role="status" className="flex flex-wrap items-center gap-2 rounded border-2 border-amber-600 bg-amber-50 px-3 py-2 text-sm">
+          <span className="font-semibold">🛡 {c.blockedTamperAttempts} attempt{c.blockedTamperAttempts > 1 ? 's' : ''} to edit this case directly in the database {c.blockedTamperAttempts > 1 ? 'were' : 'was'} blocked.</span>
+          <span>The data shown is the original.</span>
+          {user!.role !== 'SAFETY_OFFICER' && <Link className="ml-auto text-accent underline" to="/audit">See what was attempted</Link>}
+        </div>
+      )}
       {c.view === 'SUMMARY' ? <SummaryView ctx={ctx} /> : (
         <>
           <nav className="flex flex-wrap gap-1" role="tablist">
