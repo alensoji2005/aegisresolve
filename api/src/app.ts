@@ -16,6 +16,7 @@ import { evidenceRoutes } from './evidence/routes.js';
 import { httpStatusFor, type Ledger, LedgerError } from './ledger/ledger.js';
 import type { AiClient } from './triage/aiClient.js';
 import { triageRoutes } from './triage/routes.js';
+import { graphRoutes } from './graph/routes.js';
 import { userRoutes } from './users/routes.js';
 import { workflowRoutes } from './workflow/routes.js';
 
@@ -33,7 +34,7 @@ export interface AppDeps {
 }
 
 /** Feature route modules register here; each gets the shared deps and runs behind authentication. */
-export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes];
+export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes, graphRoutes];
 
 export function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? (process.env.NODE_ENV !== 'test' && !process.env.VITEST), bodyLimit: 1024 * 1024 });

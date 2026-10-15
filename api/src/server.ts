@@ -7,7 +7,8 @@ import { migrate } from './migrate.js';
 import { CREDENTIALS_PATH, seed } from './seed/index.js';
 import { HttpAiClient } from './triage/aiClient.js';
 import { runTriage } from './triage/job.js';
-import { startTicker } from './workflow/ticker.js';
+import { fillSensorReadings } from './twin/service.js';
+import { runSweeps, startTicker } from './workflow/ticker.js';
 
 /**
  * OFFLINE=1 runs a self-contained demo without Docker or Fabric: embedded Postgres, in-memory ledger and blobs,
@@ -36,7 +37,10 @@ async function main() {
   const triage = (caseId: string) => runTriage(deps, caseId);
   deps.onCaseCreated = (caseId) => void triage(caseId);
   const app = buildApp(deps);
-  const stopTicker = startTicker(deps, triage);
+  const stopTicker = startTicker({
+    sla: () => runSweeps(deps, triage),
+    sensors: () => fillSensorReadings(deps),
+  });
   await app.listen({ port: cfg.PORT, host: '127.0.0.1' });
   const shutdown = async () => {
     stopTicker();

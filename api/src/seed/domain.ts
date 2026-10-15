@@ -75,16 +75,21 @@ export function buildDomain(rnd: Rnd, now: Date) {
   for (const l of locations) {
     for (let h = 14 * 24; h > 0; h--) {
       const ts = hourNow - h * HOUR;
-      const daily = Math.sin((2 * Math.PI * ((ts / HOUR) % 24)) / 24);
       const excursion = l.startsWith(EXCURSION_MAGAZINE) && ts >= excursionStart && ts < excursionStart + 48 * HOUR;
-      readings.push({ location: l, ts: new Date(ts), temp: round(19 + 4 * daily + (rnd() - 0.5)),
-        rh: excursion ? 85 : round(55 + 6 * daily + (rnd() - 0.5) * 4) });
+      const r = normalReading(ts, rnd(), rnd());
+      readings.push({ location: l, ts: new Date(ts), temp: r.temp, rh: excursion ? 85 : r.rh });
     }
   }
   return { depots, locations, personnel, assets, events: events as Required<SeedEvent>[], readings };
 }
 
 const round = (x: number) => Math.round(x * 10) / 10;
+
+/** In-bounds synthetic reading for an hour: daily temperature/humidity cycle plus noise (n1, n2 in [0,1)). */
+export function normalReading(ts: number, n1: number, n2: number): { temp: number; rh: number } {
+  const daily = Math.sin((2 * Math.PI * ((ts / HOUR) % 24)) / 24);
+  return { temp: round(19 + 4 * daily + (n1 - 0.5)), rh: round(55 + 6 * daily + (n2 - 0.5) * 4) };
+}
 
 export async function seedDomain(deps: AppDeps, rnd: Rnd): Promise<{ events: number; readings: number }> {
   const d = buildDomain(rnd, deps.now());

@@ -7,6 +7,8 @@ import './index.css';
 import { AuditConsole } from './pages/AuditConsole';
 import { CaseDetail } from './pages/CaseDetail';
 import { CaseList } from './pages/CaseList';
+import { DigitalTwin } from './pages/DigitalTwin';
+import { KnowledgeGraph } from './pages/KnowledgeGraph';
 import { Login } from './pages/Login';
 import { SubmitComplaint } from './pages/SubmitComplaint';
 import { homeFor, NAV_BY_ROLE, RequireRole } from './routes';
@@ -63,6 +65,8 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/review" element={<RequireRole roles={['SAFETY_OFFICER', 'REVIEW_BOARD']}>
                 <CaseList title="Review queue" query="status=FINDINGS_SUBMITTED,APPEALED" sortByRisk /></RequireRole>} />
               <Route path="/audit" element={<RequireRole roles={['AUDITOR', 'REVIEW_BOARD']}><AuditConsole /></RequireRole>} />
+              <Route path="/graph" element={<RequireRole roles={['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR']}><KnowledgeGraph /></RequireRole>} />
+              <Route path="/twin" element={<RequireRole roles={['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR', 'STORE_OFFICER']}><DigitalTwin /></RequireRole>} />
               <Route path="/cases/:id" element={<CaseDetail />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

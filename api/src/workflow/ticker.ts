@@ -46,18 +46,20 @@ export async function runSweeps(deps: AppDeps, retryTriage?: RetryTriage): Promi
   return out;
 }
 
-export function startTicker(deps: AppDeps, retryTriage?: RetryTriage, everyMs = 60_000): () => void {
+/** Runs the background jobs in order every interval; one failing job never stops the others or the next tick. */
+export function startTicker(jobs: Record<string, () => Promise<unknown>>, everyMs = 60_000): () => void {
   let running = false;
   const handle = setInterval(async () => {
     if (running) return;
     running = true;
-    try {
-      await runSweeps(deps, retryTriage);
-    } catch (e) {
-      console.error('ticker sweep failed', e);
-    } finally {
-      running = false;
+    for (const [name, job] of Object.entries(jobs)) {
+      try {
+        await job();
+      } catch (e) {
+        console.error(`background job ${name} failed`, e);
+      }
     }
+    running = false;
   }, everyMs);
   return () => clearInterval(handle);
 }

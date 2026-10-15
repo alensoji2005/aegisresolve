@@ -111,7 +111,7 @@ function Overview({ ctx: { c, act, busy, role, userId } }: { ctx: Ctx }) {
   return (
     <div className="grid gap-4 md:grid-cols-[3fr_2fr]">
       <div className="space-y-4">
-        <Section title={c.title ?? 'Complaint'}>
+        <Section title={c.title ?? 'Complaint'} actions={<Link className="btn" to={`/graph?center=case:${c.caseId}`}>Knowledge graph</Link>}>
           <p className="whitespace-pre-wrap text-sm">{c.description}</p>
           <dl className="mt-3 grid grid-cols-[8rem_1fr] gap-y-1 text-sm">
             <dt className="text-ink/60">Location</dt><dd className="font-mono">{c.locationRef}</dd>
