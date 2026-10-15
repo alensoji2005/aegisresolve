@@ -58,7 +58,22 @@ export class FabricLedger implements Ledger {
     }
   }
 
-  submit<T>(user: LedgerUser, fn: string, args: string[]) {
+  /**
+   * MVCC_READ_CONFLICT means another transaction in the same block changed a key this one read (e.g. triage updating a
+   * case while its evidence is being anchored). The rejected transaction had no effect, so re-endorsing it is safe.
+   */
+  async submit<T>(user: LedgerUser, fn: string, args: string[]): Promise<{ txId: string; result: T }> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.submitOnce<T>(user, fn, args);
+      } catch (e) {
+        if (!(e instanceof LedgerError && e.code === 'MVCC_READ_CONFLICT') || attempt >= 4) throw e;
+        await new Promise((r) => setTimeout(r, 300 * attempt + Math.random() * 300));
+      }
+    }
+  }
+
+  private submitOnce<T>(user: LedgerUser, fn: string, args: string[]) {
     return this.withContract(user, fn, async (contract, name) => {
       const commit = await contract.submitAsync(name, { arguments: args });
       const result = parse(commit.getResult()) as T;
