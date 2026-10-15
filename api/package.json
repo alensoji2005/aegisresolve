@@ -16,7 +16,8 @@
     "predev:offline": "npm --prefix ../chaincode/aegis-cc run build --silent",
     "prestart": "npm --prefix ../chaincode/aegis-cc run build --silent",
     "preseed": "npm --prefix ../chaincode/aegis-cc run build --silent",
-    "sync:identities": "tsx --env-file=../.env scripts/sync-identities.ts"
+    "sync:identities": "tsx --env-file=../.env scripts/sync-identities.ts",
+    "eval:tamper": "npm --prefix ../chaincode/aegis-cc run build --silent && tsx --env-file-if-exists=../.env scripts/eval-tamper.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1151.0",

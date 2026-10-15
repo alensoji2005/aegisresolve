@@ -22,7 +22,7 @@ const schema = z.object({
   PSEUDONYM_SECRET: b64('PSEUDONYM_SECRET', 32),
   JWT_SECRET: b64('JWT_SECRET', 64),
   WALLET_KEK: b64('WALLET_KEK', 32),
-  LEDGER_MODE: z.enum(['fabric', 'fake']).default('fabric'),
+  LEDGER_MODE: z.enum(['fabric', 'fake', 'postgres']).default('fabric'),
   FABRIC_CHANNEL: z.string().default('aegischannel'),
   FABRIC_CHAINCODE: z.string().default('aegis-cc'),
   FABRIC_ORGS_DIR: z.string().default(''),

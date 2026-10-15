@@ -31,7 +31,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const cfg = loadConfig();
     const pool = createPool(cfg.DATABASE_URL);
     await migrate(pool);
-    const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg), blobs: new MemoryBlobStore(), ai: new HttpAiClient(cfg), now: () => new Date() };
+    const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg, pool), blobs: new MemoryBlobStore(), ai: new HttpAiClient(cfg), now: () => new Date() };
     const r = await seed(deps);
     console.log(r.status === 'seeded' ? `seeded ${r.users} users, ${r.events} lifecycle events; credentials in ${CREDENTIALS_PATH}` : r.status);
     await pool.end();

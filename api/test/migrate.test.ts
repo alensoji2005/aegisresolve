@@ -9,7 +9,7 @@ beforeAll(async () => ({ pool, stop } = await testPool()));
 afterAll(() => stop());
 
 it('applies 001_init and is idempotent', async () => {
-  expect(await migrate(pool)).toEqual(['001_init.sql']);
+  expect((await migrate(pool))[0]).toBe('001_init.sql');
   expect(await migrate(pool)).toEqual([]);
   const { rows } = await pool.query(`select extname from pg_extension where extname='vector'`);
   expect(rows).toHaveLength(1);

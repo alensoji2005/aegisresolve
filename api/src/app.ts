@@ -35,8 +35,8 @@ export interface AppDeps {
 /** Feature route modules register here; each gets the shared deps and runs behind authentication. */
 export const protectedRoutes: ((deps: AppDeps) => FastifyPluginAsync)[] = [userRoutes, caseRoutes, evidenceRoutes, workflowRoutes, triageRoutes, auditRoutes];
 
-export function buildApp(deps: AppDeps): FastifyInstance {
-  const app = Fastify({ logger: process.env.NODE_ENV !== 'test' && !process.env.VITEST, bodyLimit: 1024 * 1024 });
+export function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}): FastifyInstance {
+  const app = Fastify({ logger: opts.logger ?? (process.env.NODE_ENV !== 'test' && !process.env.VITEST), bodyLimit: 1024 * 1024 });
   app.register(helmet);
   app.register(cors, { origin: deps.cfg.WEB_ORIGIN, credentials: true });
   app.register(cookie);

@@ -1,28 +1,17 @@
-// Compiled chaincode (tsc: legacy decorators + metadata, as on a real peer). esbuild-based runners cannot compile it from src.
-import { ComplaintContract, LifecycleContract } from '../../../chaincode/aegis-cc/dist/index.js';
 import { ctxFor, newWorld } from '../../../chaincode/aegis-cc/test/fakeContext.js';
-import { fakeIdentityOf, type Ledger, LedgerError, type LedgerUser } from './ledger.js';
-
-const parse = (s: unknown) => {
-  if (typeof s !== 'string') return s;
-  try { return JSON.parse(s); } catch { return s; }
-};
+import { actorFor, invokeChaincode } from './inProcess.js';
+import type { Ledger, LedgerUser } from './ledger.js';
 
 /** Runs the real chaincode classes in-process against an in-memory world state (tests and offline dev). */
 export class FakeLedger implements Ledger {
   readonly world = newWorld();
-  private contracts: Record<string, any> = { complaint: new ComplaintContract(), lifecycle: new LifecycleContract() };
   private seq = 0;
 
   constructor(private clock: () => Date) {}
 
   private async call(user: LedgerUser, fn: string, args: string[], write: boolean) {
-    const [cn, fname] = fn.split(':');
-    const contract = this.contracts[cn];
-    if (!contract || typeof contract[fname] !== 'function') throw new LedgerError('LEDGER_ERROR', `unknown function ${fn}`);
     const txId = `tx-${String(++this.seq).padStart(6, '0')}`;
-    const ctx = ctxFor(this.world, { id: fakeIdentityOf(user.userId), role: user.role, unit: user.unit, depot: user.depot, pseudo: user.pseudo },
-      { txId, time: this.clock() });
+    const ctx = ctxFor(this.world, actorFor(user), { txId, time: this.clock() });
     // Fabric transactions are atomic and evaluations never write: snapshot and restore on failure / evaluate.
     const snapshot = { state: new Map(this.world.state), history: new Map([...this.world.history].map(([k, v]) => [k, [...v]])), events: this.world.events.length };
     const restore = () => {
@@ -31,12 +20,12 @@ export class FakeLedger implements Ledger {
       this.world.events.length = snapshot.events;
     };
     try {
-      const result = parse(await contract[fname](ctx, ...args));
+      const result = await invokeChaincode(fn, ctx, args);
       if (!write) restore();
       return { txId, result };
     } catch (e) {
       restore();
-      throw LedgerError.from(e);
+      throw e;
     }
   }
 

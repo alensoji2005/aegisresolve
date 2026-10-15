@@ -28,7 +28,7 @@ async function main() {
   if (offline) pool.options.max = 1;
   await migrate(pool);
   const blobs: BlobStore = offline ? new MemoryBlobStore() : cfg.BLOB_DIR ? new FsBlobStore(cfg.BLOB_DIR) : new S3BlobStore(cfg);
-  const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg), blobs, ai: new HttpAiClient(cfg), now: () => new Date() };
+  const deps: AppDeps = { cfg, pool, ledger: await makeLedger(cfg, pool), blobs, ai: new HttpAiClient(cfg), now: () => new Date() };
   if (offline) {
     const r = await seed(deps);
     console.log(`offline demo: ${r.status}; credentials in ${CREDENTIALS_PATH}`);

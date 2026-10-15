@@ -1,0 +1,24 @@
+[
+  {
+    "mode": "fake",
+    "ledger": "Independent ledger (simulated in-process)",
+    "detected": {
+      "status": "reconcile: status",
+      "investigator": "reconcile: investigator",
+      "content": "reconcile: content",
+      "evidence": "verify-evidence"
+    },
+    "baselineClean": true
+  },
+  {
+    "mode": "postgres",
+    "ledger": "Centralised database (ledger tables in app DB)",
+    "detected": {
+      "status": null,
+      "investigator": null,
+      "content": null,
+      "evidence": null
+    },
+    "baselineClean": true
+  }
+]
