@@ -17,7 +17,8 @@
     "prestart": "npm --prefix ../chaincode/aegis-cc run build --silent",
     "preseed": "npm --prefix ../chaincode/aegis-cc run build --silent",
     "sync:identities": "tsx --env-file=../.env scripts/sync-identities.ts",
-    "eval:tamper": "npm --prefix ../chaincode/aegis-cc run build --silent && tsx --env-file-if-exists=../.env scripts/eval-tamper.ts"
+    "eval:tamper": "npm --prefix ../chaincode/aegis-cc run build --silent && tsx --env-file-if-exists=../.env scripts/eval-tamper.ts",
+    "eval:bench": "npm --prefix ../chaincode/aegis-cc run build --silent && tsx --env-file-if-exists=../.env scripts/eval-benchmark.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1151.0",

@@ -1,0 +1,430 @@
+{
+  "model": "clf-1+BAAI/bge-small-en-v1.5",
+  "test_split": {
+    "n": 285,
+    "macro_f1": 1.0,
+    "accuracy": 1.0,
+    "per_class": {
+      "CONDUCT_PROCESS_GRIEVANCE": 1.0,
+      "DOCUMENTATION_CUSTODY_GAP": 1.0,
+      "FACILITY_EQUIPMENT_FAULT": 1.0,
+      "INSPECTION_OVERDUE": 1.0,
+      "INVENTORY_DISCREPANCY": 1.0,
+      "PACKAGING_LABELLING_DEFECT": 1.0,
+      "SAFETY_PROCEDURE_VIOLATION": 1.0,
+      "STORAGE_ENVIRONMENT": 1.0,
+      "TRANSPORT_HANDLING_DAMAGE": 1.0,
+      "UNAUTHORISED_ACCESS": 1.0
+    },
+    "confusion": [
+      [
+        32,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        36,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        31,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        28,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        37,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        23,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        31,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        27
+      ]
+    ]
+  },
+  "challenge_set": {
+    "n": 50,
+    "embed_lr": {
+      "macro_f1": 0.7778,
+      "accuracy": 0.78,
+      "per_class": {
+        "CONDUCT_PROCESS_GRIEVANCE": 0.714,
+        "DOCUMENTATION_CUSTODY_GAP": 0.571,
+        "FACILITY_EQUIPMENT_FAULT": 0.889,
+        "INSPECTION_OVERDUE": 1.0,
+        "INVENTORY_DISCREPANCY": 0.667,
+        "PACKAGING_LABELLING_DEFECT": 0.667,
+        "SAFETY_PROCEDURE_VIOLATION": 0.667,
+        "STORAGE_ENVIRONMENT": 1.0,
+        "TRANSPORT_HANDLING_DAMAGE": 0.714,
+        "UNAUTHORISED_ACCESS": 0.889
+      },
+      "confusion": [
+        [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          3,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ]
+      ]
+    },
+    "tfidf_lr_baseline": {
+      "macro_f1": 0.5357,
+      "accuracy": 0.56,
+      "per_class": {
+        "CONDUCT_PROCESS_GRIEVANCE": 0.833,
+        "DOCUMENTATION_CUSTODY_GAP": 0.545,
+        "FACILITY_EQUIPMENT_FAULT": 0.571,
+        "INSPECTION_OVERDUE": 0.533,
+        "INVENTORY_DISCREPANCY": 0.25,
+        "PACKAGING_LABELLING_DEFECT": 0.429,
+        "SAFETY_PROCEDURE_VIOLATION": 0.333,
+        "STORAGE_ENVIRONMENT": 0.286,
+        "TRANSPORT_HANDLING_DAMAGE": 0.909,
+        "UNAUTHORISED_ACCESS": 0.667
+      },
+      "confusion": [
+        [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0,
+          0,
+          2,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          2,
+          1,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          2,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3
+        ]
+      ]
+    }
+  },
+  "duplicates": {
+    "pairs_true": 44,
+    "tp": 25,
+    "fp": 0,
+    "fn": 19,
+    "precision": 1.0,
+    "recall": 0.5682,
+    "f1": 0.7246
+  }
+}

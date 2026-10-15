@@ -1,0 +1,50 @@
+{"category":"INVENTORY_DISCREPANCY","text":"Did the weekly tally this morning and we are four boxes light on the B-lot pallet compared with what the system says we hold."}
+{"category":"INVENTORY_DISCREPANCY","text":"Numbers on the shelf don't add up. Paper register says 120, I counted 112 twice with a colleague."}
+{"category":"INVENTORY_DISCREPANCY","text":"After last Friday's issue the balance should have dropped by 10 but the computer shows it dropped by 18. Something was booked out twice or taken."}
+{"category":"INVENTORY_DISCREPANCY","text":"Returned items from the range never made it back onto the books, so the store looks overstocked on paper and short in reality."}
+{"category":"INVENTORY_DISCREPANCY","text":"Stocktake variance again on the same lot as last month, about 3 percent under."}
+{"category":"STORAGE_ENVIRONMENT","text":"It has been sweltering inside magazine 2 since the cooling unit died, the thermometer by the door says 38."}
+{"category":"STORAGE_ENVIRONMENT","text":"Moisture is getting in somewhere, the cardboard on the bottom row has gone soft and there is a musty smell."}
+{"category":"STORAGE_ENVIRONMENT","text":"Logger graph for bay 7 shows relative humidity sitting near 90 all weekend, way above what we are allowed."}
+{"category":"STORAGE_ENVIRONMENT","text":"Water pooled near the racks after the storm and the air inside feels wet."}
+{"category":"STORAGE_ENVIRONMENT","text":"The bay is freezing overnight now that the heater is off, readings below the minimum on three nights."}
+{"category":"PACKAGING_LABELLING_DEFECT","text":"Half the crates from the new delivery have stickers peeling off and you cannot read the lot code any more."}
+{"category":"PACKAGING_LABELLING_DEFECT","text":"Tamper seals on two containers were already cut when we opened the shipment for inspection."}
+{"category":"PACKAGING_LABELLING_DEFECT","text":"Box says one lot, the paperwork inside says another, and the barcode scans as a third."}
+{"category":"PACKAGING_LABELLING_DEFECT","text":"Outer cartons are split at the corners and the inner liners are torn."}
+{"category":"PACKAGING_LABELLING_DEFECT","text":"Hazard markings are missing from the side panels of the latest batch."}
+{"category":"DOCUMENTATION_CUSTODY_GAP","text":"Nobody signed for the handover when the items moved between stores on Tuesday, there is just a blank space on the form."}
+{"category":"DOCUMENTATION_CUSTODY_GAP","text":"I can't find any record of who held the lot between the 3rd and the 9th."}
+{"category":"DOCUMENTATION_CUSTODY_GAP","text":"The transfer voucher was filled in after the fact and the times don't match the gate log."}
+{"category":"DOCUMENTATION_CUSTODY_GAP","text":"Receipt slip for the return is missing so we cannot prove it came back."}
+{"category":"DOCUMENTATION_CUSTODY_GAP","text":"Two different officers are named as the custodian for the same period in two different registers."}
+{"category":"UNAUTHORISED_ACCESS","text":"Came in at 6am and the magazine gate was wide open, padlock hanging off, nothing in the entry book."}
+{"category":"UNAUTHORISED_ACCESS","text":"A contractor was walking around inside the restricted area by himself with nobody escorting him."}
+{"category":"UNAUTHORISED_ACCESS","text":"Badge logs show someone swiping into the store at 2am on a day it was closed."}
+{"category":"UNAUTHORISED_ACCESS","text":"Scratch marks and a bent hasp on the side door suggest someone tried to pry it."}
+{"category":"UNAUTHORISED_ACCESS","text":"A keycard belonging to an officer who left last month opened the vault yesterday."}
+{"category":"SAFETY_PROCEDURE_VIOLATION","text":"The team moved the pallets with only one person present even though the rules need two."}
+{"category":"SAFETY_PROCEDURE_VIOLATION","text":"Someone was vaping right next to the loading bay during the transfer."}
+{"category":"SAFETY_PROCEDURE_VIOLATION","text":"They skipped the pre-move briefing and nobody wore the required protective gear."}
+{"category":"SAFETY_PROCEDURE_VIOLATION","text":"The fire point near the magazine had no extinguisher while work was going on."}
+{"category":"SAFETY_PROCEDURE_VIOLATION","text":"Mobile phones were being used inside the handling area against standing orders."}
+{"category":"INSPECTION_OVERDUE","text":"The six-monthly check on this batch should have been done in April and it still hasn't happened."}
+{"category":"INSPECTION_OVERDUE","text":"No one has inspected bay 3 since last year according to the inspection card on the door."}
+{"category":"INSPECTION_OVERDUE","text":"Several lots are past their review date but still marked as fit for issue."}
+{"category":"INSPECTION_OVERDUE","text":"Surveillance testing schedule has slipped by two months for the whole magazine."}
+{"category":"INSPECTION_OVERDUE","text":"The due date for the condition check passed weeks ago and nothing is booked."}
+{"category":"TRANSPORT_HANDLING_DAMAGE","text":"The truck hit a pothole hard on the way in and three crates came off the stack and split open."}
+{"category":"TRANSPORT_HANDLING_DAMAGE","text":"Forklift driver clipped the rack while unloading and dented two containers."}
+{"category":"TRANSPORT_HANDLING_DAMAGE","text":"Load wasn't strapped properly for the convoy and arrived all shifted with crushed boxes."}
+{"category":"TRANSPORT_HANDLING_DAMAGE","text":"A pallet was dropped off the tail lift during delivery this afternoon."}
+{"category":"TRANSPORT_HANDLING_DAMAGE","text":"Containers arrived scraped and gouged after being dragged across the yard."}
+{"category":"FACILITY_EQUIPMENT_FAULT","text":"The extractor fan in the store makes a horrible rattling noise and keeps cutting out."}
+{"category":"FACILITY_EQUIPMENT_FAULT","text":"Half the lights in magazine 1 are dead and the emergency lighting didn't come on in the power cut."}
+{"category":"FACILITY_EQUIPMENT_FAULT","text":"The alarm panel keeps beeping with a fault code and maintenance haven't come out."}
+{"category":"FACILITY_EQUIPMENT_FAULT","text":"Roof is leaking through the ceiling tiles above the walkway."}
+{"category":"FACILITY_EQUIPMENT_FAULT","text":"The loading dock door motor is broken so we are lifting it by hand."}
+{"category":"CONDUCT_PROCESS_GRIEVANCE","text":"My manager keeps putting me on every night shift and won't explain why when I ask."}
+{"category":"CONDUCT_PROCESS_GRIEVANCE","text":"I raised a concern three weeks ago and have heard absolutely nothing back."}
+{"category":"CONDUCT_PROCESS_GRIEVANCE","text":"The way leave gets approved here feels like favouritism."}
+{"category":"CONDUCT_PROCESS_GRIEVANCE","text":"I was shouted at in front of the whole team during the morning brief."}
+{"category":"CONDUCT_PROCESS_GRIEVANCE","text":"My earlier complaint was closed without anyone speaking to me about it."}
