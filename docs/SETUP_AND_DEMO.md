@@ -78,12 +78,12 @@ Enter the code within about 30 seconds; run the command again for a new one. To 
 | User | Role | Use it to show |
 |---|---|---|
 | `comp1`, `comp2` | Complainant | Filing a complaint, private case view, appeal |
-| `store1`, `store2` | Store officer (DEP-01 / DEP-02) | Depot-scoped view |
-| `inv1`, `inv2` | Investigator (external) | Accepting, linking events, signed findings |
+| `store1`, `store2` | Store officer (DEP-01 / DEP-02) | Depot-scoped cases, **Depot twin** for their own depot |
+| `inv1`, `inv2` | Investigator (external) | Accepting, linking events, signed findings, **Knowledge graph**, **Anomalies**; full access to a case they are not assigned to only through a disclosure grant |
 | `inv3` | Investigator **based at DEP-02** | Triggering the conflict-of-interest block |
-| `safety1` | Safety officer | Triage queue, assignment, first sign-off |
-| `board1`–`board3` | Review board | Multi-signature closure, appeal decisions |
-| `audit1` | Auditor | Ledger history, reconcile, evidence integrity |
+| `safety1` | Safety officer | Triage queue, assignment, first sign-off, **Depot twin**, **Anomalies** (run scan), receiving an identity grant |
+| `board1`–`board3` | Review board | Multi-signature closure, appeal decisions, **Disclosure** tab (grant / approve / revoke) |
+| `audit1` | Auditor | Ledger history, reconcile, evidence integrity, access log (incl. identity reveals), **Anomalies**, **Knowledge graph**, **Depot twin** |
 
 Tip: open each user in a separate browser profile or incognito window so you don't have to keep logging out.
 
@@ -233,13 +233,16 @@ pnpm --filter @aegis/api test rbac-matrix            # every role x every endpoi
 
 ### 4.0 After pulling new code
 
-If `chaincode/aegis-cc` changed, deploy it with the next sequence number, then restart the app. For example, after the disclosure update, if your last deploy was 2:
+If `chaincode/aegis-cc` changed, deploy it with the next sequence number, then restart the app:
 ```bash
 git pull
-bash network/deploy.sh 3
+pnpm install
+bash network/deploy.sh N
 bash scripts/start-app.sh
 ```
-Database migrations run on API start.
+- **N** is one more than your last deploy. A clean reset (4.1) restarts the count at 1, so the first deploy after a reset is 2.
+- If you don't know N, try any number. Fabric replies *"requested sequence X is larger than the next available sequence number Y"*; rerun with Y.
+- `deploy.sh` restarts stopped Fabric containers first. Database migrations run automatically when the API starts.
 
 ### 4.1 Clean reset (fresh blockchain + database)
 
@@ -262,6 +265,11 @@ A reset creates new passwords, so use `scripts/login.sh` again.
 | Login code rejected | Codes last 30 s; run `scripts/login.sh` again. Make sure you're using the codespace's credentials, not a copy on your PC |
 | Case stuck at SUBMITTED | The AI service isn't running (check the uvicorn lines). The API retries triage every minute, up to 3 times |
 | Chaincode changed | `bash network/deploy.sh N` with N one higher than the last deploy, then restart `start-app.sh` |
+| `deploy.sh`: *connection refused localhost:7051* | Fabric containers are stopped after a codespace restart: `docker start $(docker ps -aq --filter status=exited)`, wait 10 s, retry (newer `deploy.sh` does this itself) |
+| `deploy.sh`: *requested sequence X is larger than the next available sequence number Y* | Rerun with `bash network/deploy.sh Y` |
+| Anomalies page empty | Scans run hourly; click **Run scan now** (needs the AI service running) |
+| Knowledge graph blank | Enter a start node such as `case:CASE-2026-000001` or `lot:LOT-B03-2025-0117`, or click an insight |
+| **Reveal identity** missing | The grant needs a second board member to approve it and must not be expired or revoked |
 | Reconcile flags a case from an earlier broken run | Ledger history can't be edited. Do a clean reset (4.1) |
 
 ### 4.3 Backup option: offline mode (no Fabric, no Docker)
