@@ -16,6 +16,7 @@ interface CaseView {
   approvals?: ApprovalView[]; relatedCaseIds?: string[]; linkedEventIds?: string[]; findingsOutcome?: string | null;
   findings?: { body: { body: string; outcome: string; correctiveAction: string | null }; createdAt: string } | null;
   grants?: { full: boolean; identity: boolean } | null;
+  integrity?: { contentIntact: boolean };
   ai?: { categoryProbs: Record<string, number>; entities: { type: string; value: string }[];
     explanation: { factors: Factor[]; topKeywords: string[]; needsHumanTriage: boolean; recurring: boolean } | null } | null;
 }
@@ -115,7 +116,9 @@ function Overview({ ctx: { c, act, busy, role, userId } }: { ctx: Ctx }) {
     <div className="grid gap-4 md:grid-cols-[3fr_2fr]">
       <div className="space-y-4">
         <Section title={c.title ?? 'Complaint'} actions={<Link className="btn" to={`/graph?center=case:${c.caseId}`}>Knowledge graph</Link>}>
-          <p className="whitespace-pre-wrap text-sm">{c.description}</p>
+          {c.integrity?.contentIntact === false
+            ? <div role="alert" className="rounded border-2 border-red-600 bg-red-50 p-3 text-sm font-semibold text-red-800">⚠ The stored complaint text no longer matches its fingerprint on the blockchain. It has been withheld and the incident logged for the auditor.</div>
+            : <p className="whitespace-pre-wrap text-sm">{c.description}</p>}
           <dl className="mt-3 grid grid-cols-[8rem_1fr] gap-y-1 text-sm">
             <dt className="text-ink/60">Location</dt><dd className="font-mono">{c.locationRef}</dd>
             <dt className="text-ink/60">Lots</dt><dd className="font-mono">{c.assetRefs?.join(', ') || '—'}</dd>
@@ -171,7 +174,7 @@ function EvidenceUpload({ caseId, act }: { caseId: string; act: Ctx['act'] }) {
   );
 }
 
-interface EvidenceRow { id: string; filename: string | null; mimeType: string; sizeBytes: number; sha256Plain: string; txId: string; createdAt: string }
+interface EvidenceRow { id: string; filename: string | null; mimeType: string; sizeBytes: number; sha256Plain: string; txId: string; createdAt: string; quarantinedAt: string | null }
 interface VerifyReport { cipherHashOk: boolean; plainSha256Ok: boolean; plainSha3Ok: boolean; ledgerMatch: boolean; ok: boolean }
 
 function Evidence({ ctx: { c, act, role, userId } }: { ctx: Ctx }) {
@@ -196,7 +199,8 @@ function Evidence({ ctx: { c, act, role, userId } }: { ctx: Ctx }) {
                     : <span className="text-red-800">✗ {Object.entries(r).filter(([k, v]) => k !== 'ok' && v === false).map(([k]) => k).join(', ')}</span>) : '—'}</td>
                   <td className="td space-x-1 whitespace-nowrap">
                     <button className="btn" onClick={() => act(async () => setReports({ ...reports, [e.id]: await apiFetch<VerifyReport>(`/cases/${c.caseId}/evidence/${e.id}/verify`) }))}>Verify</button>
-                    {canDownload && <button className="btn" onClick={() => act(() => downloadEvidence(c.caseId, e.id, e.filename ?? 'evidence'))}>Download</button>}
+                    {e.quarantinedAt && <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">🔒 Quarantined — tampered</span>}
+                    {canDownload && !e.quarantinedAt && <button className="btn" onClick={() => act(() => downloadEvidence(c.caseId, e.id, e.filename ?? 'evidence'))}>Download</button>}
                   </td>
                 </tr>
               );

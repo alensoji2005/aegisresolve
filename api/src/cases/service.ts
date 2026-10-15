@@ -6,7 +6,7 @@ import { openString, pseudonymFor, sealString, sha256Hex } from '../crypto.js';
 import { ApiError, notFound } from '../errors.js';
 import { activeGrants } from '../disclosure/service.js';
 import { loadLedgerUser } from '../users/service.js';
-import { projectCase } from './projection.js';
+import { OUTCOME_VISIBLE, projectCase } from './projection.js';
 
 export const createCaseSchema = z.object({
   title: z.string().trim().min(5).max(200),
@@ -97,13 +97,14 @@ async function usernamesByFabricId(deps: AppDeps, ids: string[]): Promise<Map<st
 
 export async function getCaseView(deps: AppDeps, user: AuthUser, caseId: string) {
   const { row, facts } = await loadCaseFor(deps, user, caseId);
-  const c = row.ledger_json;
   const lu = await loadLedgerUser(deps, user.id);
+  // Read the case from the ledger, not the database copy: a tampered database row never reaches the screen.
+  const c = await deps.ledger.evaluate<CaseRecord>(lu, 'complaint:getCase', [caseId]);
   const history = await deps.ledger.evaluate<{ status: string; at: string }[]>(lu, 'complaint:getCaseHistory', [caseId]);
   const timeline = history.filter((h, i) => i === 0 || h.status !== history[i - 1].status).map((h) => ({ status: h.status, at: h.at }));
   const summary = {
     caseId, status: c.status, category: c.category, riskLevel: c.riskLevel, slaDueAt: c.slaDueAt, escalationLevel: c.escalationLevel,
-    outcome: row.outcome, closedAt: c.closedAt, createdAt: c.createdAt, triageStatus: row.triage_status, isOwner: facts.ownedByUser, timeline,
+    outcome: OUTCOME_VISIBLE.includes(c.status) ? c.outcome : null, closedAt: c.closedAt, createdAt: c.createdAt, triageStatus: row.triage_status, isOwner: facts.ownedByUser, timeline,
     view: 'SUMMARY' as 'SUMMARY' | 'FULL',
     grants: ['INVESTIGATOR', 'SAFETY_OFFICER', 'REVIEW_BOARD', 'AUDITOR'].includes(user.role) ? await activeGrants(deps, user, caseId) : null,
   };
@@ -111,14 +112,17 @@ export async function getCaseView(deps: AppDeps, user: AuthUser, caseId: string)
 
   await recordAccess(deps, user, caseId, 'FULL');
   const content = await decryptContent(deps, caseId);
+  // Complaint text is shown only while it still matches its on-chain hash.
+  const contentIntact = contentHashOf(content.title, content.description) === c.contentHash;
   const people = await usernamesByFabricId(deps, [c.investigator?.id, ...c.approvals.map((a) => a.signer)].filter((x): x is string => !!x));
   const ai = (await deps.pool.query('select category_probs, entities, risk_explanation, model_versions from case_ai where case_id = $1', [caseId])).rows[0] ?? null;
   const finding = (await deps.pool.query('select body_enc, outcome, created_at from findings where case_id = $1 order by created_at desc limit 1', [caseId])).rows[0];
   return {
     ...summary,
     view: 'FULL' as const,
-    title: content.title,
-    description: content.description,
+    title: contentIntact ? content.title : null,
+    description: contentIntact ? content.description : null,
+    integrity: { contentIntact },
     assetRefs: c.assetRefs,
     locationRef: c.locationRef,
     riskScore: c.riskScore,

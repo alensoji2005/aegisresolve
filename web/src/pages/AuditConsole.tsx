@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { apiFetch, errorText, post } from '../api';
 import { ErrorNote, fmt, Section, short, StatusBadge } from '../components/ui';
@@ -15,6 +16,15 @@ const CHECK_LABEL = {
   plainSha256Ok: 'Content fingerprint (SHA-256) does not match',
   plainSha3Ok: 'Content fingerprint (SHA3-256) does not match',
   ledgerMatch: 'Database hashes differ from the ledger',
+};
+
+interface Incident { id: number; kind: string; caseId: string; action: string; detectedBy: string; detectedAt: string }
+
+const INCIDENT_KIND: Record<string, string> = {
+  CASE_FIELD: 'Case record edited in the database', CONTENT: 'Complaint text rewritten', EVIDENCE: 'Evidence file altered', MISSING_ON_LEDGER: 'Case missing from blockchain',
+};
+const INCIDENT_ACTION: Record<string, string> = {
+  REPAIRED_FROM_LEDGER: '✓ Restored from blockchain', CONTENT_WITHHELD: '🔒 Text withheld', QUARANTINED: '🔒 File quarantined', FLAGGED: '⚠ Flagged',
 };
 
 function TamperAlert({ text }: { text: string }) {
@@ -41,6 +51,8 @@ export function AuditConsole() {
   const [lookup, setLookup] = useState<{ history: any[]; access: any[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [repair, setRepair] = useState<{ repaired: Mismatch[]; unrepairable: Mismatch[] } | null>(null);
+  const incidents = useQuery({ queryKey: ['incidents'], queryFn: () => apiFetch<Incident[]>('/audit/incidents'), refetchInterval: 60_000 });
 
   const run = (name: string, fn: () => Promise<void>) => async () => {
     setBusy(name);
@@ -69,8 +81,26 @@ export function AuditConsole() {
                       <td className="td mono text-ink">{short(String(m.ledger), 24)}</td>
                       <td className="td mono font-semibold text-red-800">{short(String(m.projection), 24)}</td></tr>))}</tbody>
                 </table>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button className="btn-primary" disabled={!!busy} onClick={run('repair', async () => {
+                    const r = await post<{ repaired: Mismatch[]; unrepairable: Mismatch[] }>('/audit/repair');
+                    setRepair(r);
+                    setRec(await apiFetch('/audit/reconcile'));
+                    await incidents.refetch();
+                  })}>{busy === 'repair' ? 'Repairing…' : 'Repair from blockchain'}</button>
+                  <span className="text-xs text-ink/60">Restores the database copy from the ledger. This also runs automatically every 5 minutes.</span>
+                </div>
               </>
             ))}
+          {repair && (
+            <div role="status" className="mt-3 rounded border border-line bg-paper p-3 text-sm">
+              <p className="font-semibold text-accent">✓ Restored {repair.repaired.length} field{repair.repaired.length === 1 ? '' : 's'} from the blockchain.</p>
+              {repair.unrepairable.length > 0 && (
+                <p className="mt-1 text-red-800">✗ {repair.unrepairable.length} could not be restored (only a hash is on-chain).
+                  The altered text is <strong>withheld from every view</strong> and the incident is logged.</p>
+              )}
+            </div>
+          )}
         </Section>
         <Section title="Evidence integrity"
           actions={<button className="btn-primary" disabled={!!busy} onClick={run('ev', async () => setEv(await post('/audit/verify-evidence')))}>{busy === 'ev' ? 'Verifying…' : 'Verify all'}</button>}>
@@ -89,10 +119,25 @@ export function AuditConsole() {
                         {(Object.keys(CHECK_LABEL) as (keyof typeof CHECK_LABEL)[]).filter((k) => !f[k]).map((k) => <li key={k}>✗ {CHECK_LABEL[k]}</li>)}
                       </ul></td></tr>))}</tbody>
                 </table>
+                <p className="mt-2 text-sm font-semibold text-red-800">🔒 Quarantined: these files can no longer be downloaded by anyone.</p>
               </>
             ))}
         </Section>
       </div>
+      <Section title="Integrity incidents" actions={<button className="btn" onClick={() => incidents.refetch()}>Refresh</button>}>
+        <p className="mb-2 text-sm text-ink/60">Every detected tampering and the automatic response. The background check runs every 5 minutes.</p>
+        {!incidents.data?.length ? <p className="text-sm text-ink/60">No incidents.</p> : (
+          <table className="w-full">
+            <thead><tr><th className="th">When</th><th className="th">Case</th><th className="th">What</th><th className="th">Response</th><th className="th">Detected by</th></tr></thead>
+            <tbody>{incidents.data.map((i) => (
+              <tr key={i.id}>
+                <td className="td whitespace-nowrap">{fmt(i.detectedAt)}</td><td className="td font-mono text-xs">{i.caseId}</td>
+                <td className="td">{INCIDENT_KIND[i.kind] ?? i.kind}</td>
+                <td className="td font-semibold">{INCIDENT_ACTION[i.action] ?? i.action}</td><td className="td">{i.detectedBy}</td>
+              </tr>))}</tbody>
+          </table>
+        )}
+      </Section>
       <Section title="Case lookup">
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void run('look', async () => setLookup({
           history: await apiFetch(`/audit/cases/${caseId}/history`), access: await apiFetch(`/audit/access-log?caseId=${caseId}`),

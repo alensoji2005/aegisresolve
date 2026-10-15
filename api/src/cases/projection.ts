@@ -3,7 +3,7 @@ import type { CaseRecord } from '../../../chaincode/aegis-cc/src/types.js';
 import type { AppDeps } from '../app.js';
 import { userIdForFabricId } from '../users/service.js';
 
-const OUTCOME_VISIBLE = ['CLOSED', 'APPEALED', 'CLOSED_FINAL'];
+export const OUTCOME_VISIBLE = ['CLOSED', 'APPEALED', 'CLOSED_FINAL'];
 
 /** Writes the ledger's case record into the Postgres read model. The ledger stays the source of truth. */
 export async function projectCase(deps: AppDeps, c: CaseRecord, db: pg.Pool | pg.PoolClient = deps.pool): Promise<void> {

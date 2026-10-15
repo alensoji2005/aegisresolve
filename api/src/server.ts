@@ -1,5 +1,6 @@
 import { runAnomalyScan } from './anomaly/service.js';
 import { buildApp, type AppDeps } from './app.js';
+import { runIntegritySweep } from './audit/routes.js';
 import { type BlobStore, FsBlobStore, MemoryBlobStore, S3BlobStore } from './blob.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db.js';
@@ -42,6 +43,7 @@ async function main() {
     sla: () => runSweeps(deps, triage),
     sensors: () => fillSensorReadings(deps),
     anomalies: throttled(60, () => runAnomalyScan(deps)),
+    integrity: throttled(5, () => runIntegritySweep(deps)),
   });
   await app.listen({ port: cfg.PORT, host: '127.0.0.1' });
   const shutdown = async () => {

@@ -174,13 +174,16 @@ Show the architecture: React UI → Fastify API → Hyperledger Fabric (2 orgs) 
    ```bash
    f=$(ls data/blobs/evidence/*/* | head -1); printf 'x' | dd of="$f" bs=1 seek=0 conv=notrunc 2>/dev/null; echo "tampered $f"
    ```
-   Click **Verify all**. The file fails `cipherHashOk`.
+   Click **Verify all**. A red banner says the file was altered, and it is now **🔒 quarantined**.
 
    "A conventional database can't tell you this happened. Here the blockchain is the reference copy, so any edit is caught."
-4. Undo the status edit (or do a clean reset afterwards):
-   ```bash
-   docker compose exec -T postgres psql -U aegis -c "update cases set status = ledger_json->>'status';"
-   ```
+4. Show that the tampering **has no effect**:
+   - Open the case as `safety1`: it still shows the true status. The case page reads from the blockchain, not the database.
+   - Try **Download** on the evidence: refused (*file does not match its blockchain fingerprint*). The Evidence tab shows the red **Quarantined** badge.
+   - Back in the audit console, click **Repair from blockchain**. The status row disappears, restored from the ledger. The **Integrity incidents** table lists *Restored from blockchain* and *File quarantined*.
+
+   "You can't stop someone with root access writing to a disk. You can make it pointless: the blockchain is the source of truth, tampered files are never served, and the database heals itself every 5 minutes."
+5. Optional, rewritten complaint text: the case page shows a red *text withheld* banner instead of the forged text. It can't be restored, because only its hash is on-chain, so it's withheld and logged.
 
 ### Step 8 — Depot twin, anomalies and the knowledge graph (`audit1`, 3 min)
 
@@ -203,7 +206,7 @@ Show the architecture: React UI → Fastify API → Hyperledger Fabric (2 orgs) 
 ### Closing (1 min)
 
 Recap the four properties and what proves each:
-- **Tamper evidence:** the reconcile and verify results, and `eval/results/tamper.md` (blockchain 4/4 attacks detected vs centralised database 0/4).
+- **Tamper evidence and response:** reconcile and verify detect edits; the database is repaired from the ledger, tampered files are quarantined, and `eval/results/tamper.md` (blockchain 4/4 attacks detected vs centralised database 0/4).
 - **Accountability:** signed transactions, multi-signature closure, the R4 block, and two-person identity disclosure.
 - **Privacy:** pseudonyms, encryption, role-based views (147 automated access checks), and time-limited grants.
 - **Intelligence:** explainable triage (0.78 macro-F1 on hand-written complaints), duplicate detection, anomaly detection (all planted anomalies found).

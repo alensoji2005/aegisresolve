@@ -5,6 +5,7 @@ import type { AppDeps } from '../app.js';
 import { authorize, type AuthUser } from '../auth/authorize.js';
 import { loadCaseFor, recordAccess } from '../cases/service.js';
 import { open, openString, seal, sealString, sha256Hex, sha3Hex } from '../crypto.js';
+import { quarantineEvidence } from '../audit/integrity.js';
 import { ApiError, forbidden, notFound } from '../errors.js';
 import type { LedgerUser } from '../ledger/ledger.js';
 import { loadLedgerUser } from '../users/service.js';
@@ -81,6 +82,7 @@ export async function listEvidence(deps: AppDeps, user: AuthUser, caseId: string
   return rows.map((r) => ({
     id: r.id, mimeType: r.mime_type, sizeBytes: Number(r.size_bytes), sha256Plain: r.sha256_plain, sha3Plain: r.sha3_plain, txId: r.ledger_tx_id,
     createdAt: r.created_at, filename: full || r.uploaded_by === user.id ? openString(r.original_name_enc, deps.cfg.AEGIS_KEK) : null,
+    quarantinedAt: r.quarantined_at,
   }));
 }
 
@@ -120,6 +122,13 @@ export async function downloadEvidence(deps: AppDeps, user: AuthUser, caseId: st
   const { facts } = await loadCaseFor(deps, user, caseId);
   if (!authorize(user, 'evidence:read', facts)) throw forbidden();
   const row = await evidenceRow(deps, caseId, evidenceId);
+  if (row.quarantined_at) throw new ApiError(409, 'EVIDENCE_QUARANTINED', 'this file failed its integrity check and is quarantined');
+  // Never serve a file that no longer matches its on-chain anchor: quarantine it instead.
+  const report = await verifyEvidenceRow(deps, await loadLedgerUser(deps, user.id), row);
+  if (!report.ok) {
+    await quarantineEvidence(deps, report, user.username);
+    throw new ApiError(409, 'EVIDENCE_TAMPERED', 'file does not match its blockchain fingerprint; it has been quarantined and the incident recorded');
+  }
   await recordAccess(deps, user, caseId, `EVIDENCE:${row.id}`);
   const data = open({ ciphertext: await deps.blobs.get(row.object_key), iv: row.iv, authTag: row.auth_tag, dekWrapped: row.dek_wrapped }, deps.cfg.AEGIS_KEK);
   return { data, mimeType: row.mime_type as string, filename: openString(row.original_name_enc, deps.cfg.AEGIS_KEK) };
