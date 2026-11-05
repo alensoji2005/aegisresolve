@@ -1,5 +1,5 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.4.1
+torch==2.12.1+cpu
 sentence-transformers==3.2.1
 scikit-learn==1.5.2
 numpy==1.26.4
